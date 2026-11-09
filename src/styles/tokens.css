@@ -1,0 +1,69 @@
+/* Design tokens — taken from the Figma file "PT Baruna Inovasi Teknologi"
+   (Water level monitoring dashboard). Names follow the Figma variables where they exist. */
+:root {
+  /* Brand */
+  --color-navy-900: #0d3067;      /* header, primary buttons, headline numbers */
+  --color-navy-700: #345484;      /* avatar fill */
+  --color-navy-500: #7089ae;      /* avatar border */
+  --color-teal-600: #0889a8;      /* accent: gauge, chart line, links, badges */
+  --color-teal-50: #eff8fb;       /* icon tiles, accent chips */
+
+  /* Neutrals */
+  --color-text-strong: #1c2938;
+  --color-text-muted: #64748b;
+  --color-text-on-dark: #ffffff;
+  --color-text-on-dark-muted: #d6e3f4;
+  --color-text-on-dark-subtle: #b9cbe3;
+  --color-border: #e2e8f0;
+  --color-surface: #ffffff;       /* Background (BG)/bg-gray/bg-primary_alt */
+  --color-surface-subtle: #f5f8fa;
+  --color-page: #f3f6f9;
+  --color-divider-on-dark: rgba(255, 255, 255, 0.19);
+  --gray-light-500: #717680;      /* gray-light_mode/500 — offline */
+
+  /* Status (Figma: success / warning / error) */
+  --success-500: #19b26b;
+  --success-600: #079455;
+  --success-50: #ecfdf3;
+  --warning-500: #f79008;
+  --warning-600: #dc6803;
+  --warning-50: #fffaeb;
+  --error-500: #f14437;
+  --error-600: #d92d21;
+  --error-50: #fef3f2;
+  --offline-500: #94a3b8;
+
+  /* Typography */
+  --font-display: 'Sora', 'Plus Jakarta Sans', system-ui, sans-serif;
+  --font-text: 'Inter', 'Plus Jakarta Sans', system-ui, sans-serif;
+  --font-figma-text: 'Plus Jakarta Sans', system-ui, sans-serif; /* font/family/text */
+
+  --fs-caption: 12px;   /* caption-12 · lh 16 */
+  --fs-body2: 14px;     /* body2-14 · lh 20 */
+  --fs-body1: 16px;
+  --fs-unit: 18px;
+  --fs-section: 20px;
+  --fs-title: 26px;
+  --fs-h2: 32px;        /* h2-32 · lh 42 */
+  --fs-gauge: 48px;
+
+  /* Spacing (Figma padding-gap-*) */
+  --gap-3xs: 6px;
+  --gap-2xs: 8px;
+  --gap-xs: 10px;
+  --gap-md: 14px;
+  --gap-lg: 16px;
+  --gap-xl: 20px;
+  --gap-2xl: 24px;
+  --page-gutter: 32px;
+
+  /* Radius */
+  --radius-xs: 6px;
+  --radius-sm: 8px;
+  --radius-lg: 12px;
+  --radius-pill: 999px;
+
+  /* Elevation */
+  --shadow-card: 0 2px 8px rgba(13, 48, 103, 0.02);
+  --shadow-popup: 0 4px 24px rgba(0, 0, 0, 0.12);   /* Pop Up Shadow */
+}
