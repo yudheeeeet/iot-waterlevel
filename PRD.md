@@ -548,7 +548,7 @@ Akun `baruna-backend` mendapat hak subscribe `baruna/devices/#` dan akses `$CONT
 | Runtime | Node.js ≥ 22 LTS (lokal v24), TypeScript 5 (strict) |
 | HTTP | Fastify 5; satu instance app dipakai oleh `server.ts` (lokal/produksi) dan entry Vercel Function (`api/index.ts`) (+ `@fastify/websocket` di F2) |
 | Validasi | Zod (REST & payload MQTT) |
-| DB | PostgreSQL (Supabase untuk demo, PostgreSQL 16+ lokal/produksi), Drizzle ORM, migrasi Drizzle Kit. Koneksi dari Vercel lewat pooler Supabase (transaction mode) |
+| DB | PostgreSQL (Supabase untuk demo, PostgreSQL 17+ lokal/produksi), driver `postgres` (postgres.js) dengan query SQL eksplisit di `repo.ts`; migrasi berupa file SQL di `backend/migrations/` + runner kecil (`schema_migrations`). Tanpa ORM agar SQL mudah diaudit. Koneksi dari Vercel lewat pooler Supabase (transaction mode, `prepare: false`) |
 | MQTT | Client `mqtt` (MQTT.js). Broker: Mosquitto 2.x + Dynamic Security (dev/test/produksi), HiveMQ Cloud (demo) |
 | Auth | `jose` (JWT user), `argon2` (password), SHA-256 (token device) |
 | Export | `exceljs` (xlsx streaming), CSV native stream |
@@ -567,7 +567,7 @@ cd backend
 npm install
 # prasyarat lokal: PostgreSQL 18 (service berjalan) + Mosquitto for Windows, lihat backend/README.md
 npm run db:check                          # cek koneksi DATABASE_URL
-npm run db:migrate                        # drizzle-kit migrate (lokal atau Supabase, tergantung DATABASE_URL)
+npm run db:migrate                        # menjalankan migrations/*.sql (lokal atau Supabase, tergantung DATABASE_URL)
 npm run db:seed                           # 1 admin + 1 viewer + 3 device contoh, token dicetak ke console
 npm run user:create -- --email admin@baruna.id --name "Admin" --role admin
 npm run user:reset-password -- --email admin@baruna.id
@@ -593,7 +593,7 @@ backend/
     server.ts               entry api lokal/produksi (listen :8080)
     worker.ts               entry worker (MQTT consumer, job presence, heartbeat, rekonsiliasi broker)
     config/env.ts           parsing env dengan Zod (gagal start jika env salah)
-    db/schema.ts            definisi tabel Drizzle
+    db/client.ts, migrate.ts  koneksi postgres.js & runner migrasi
     db/migrations/
     modules/
       identity/             routes.ts, service.ts, repo.ts, schemas.ts, *.test.ts
@@ -603,7 +603,8 @@ backend/
       readings/             downsample.ts, carryForward.ts, export.ts
       weather/              bmkg.ts, openMeteo.ts, merge.ts, cache.ts
     shared/                 errors.ts, auth guard, logger, time utils
-  scripts/                  simulate-device.ts, user-create.ts, user-reset-password.ts, seed.ts
+    cli/                    migrate, db-check, seed, user-create, user-reset-password, simulate-device
+  migrations/               0001_init.sql, ... (SQL, diaudit langsung)
   tests/integration/
   api/index.ts              entry Vercel Function (memakai app.ts)
   vercel.json               rewrite & cron keep-alive

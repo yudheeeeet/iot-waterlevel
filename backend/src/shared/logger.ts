@@ -1,5 +1,5 @@
 import type { FastifyServerOptions } from 'fastify';
-import type { Env } from '../config/env.js';
+import type { BaseEnv } from '../config/env.js';
 
 /** Fields that may carry secrets; pino replaces them with "[redacted]". */
 export const REDACT_PATHS = [
@@ -12,7 +12,7 @@ export const REDACT_PATHS = [
   '*.refreshToken',
 ];
 
-export function loggerOptions(env: Env): FastifyServerOptions['logger'] {
+export function loggerOptions(env: BaseEnv): FastifyServerOptions['logger'] {
   return {
     level: env.LOG_LEVEL,
     redact: { paths: REDACT_PATHS, censor: '[redacted]' },

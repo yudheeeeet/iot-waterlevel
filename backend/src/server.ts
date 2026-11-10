@@ -1,13 +1,13 @@
-import { loadEnv } from './config/env.js';
+import { loadApiEnv } from './config/env.js';
 import { createSql, pingDb } from './db/client.js';
-import { buildApp } from './app.js';
+import { authConfigFromEnv, buildApp } from './app.js';
 import { loggerOptions } from './shared/logger.js';
 
-const env = loadEnv();
+const env = loadApiEnv();
 const sql = createSql(env.DATABASE_URL);
 
 const app = await buildApp({
-  deps: { checkDb: () => pingDb(sql) },
+  deps: { checkDb: () => pingDb(sql), sql, auth: authConfigFromEnv(env) },
   logger: loggerOptions(env),
 });
 

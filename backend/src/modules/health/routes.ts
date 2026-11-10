@@ -9,7 +9,7 @@ export interface HealthDeps {
 export const healthRoutes =
   (deps: HealthDeps): FastifyPluginAsync =>
   async (app) => {
-    app.get('/health', async (_request, reply) => {
+    app.get('/health', { config: { public: true } }, async (_request, reply) => {
       const dbUp = await deps.checkDb();
       return reply.status(dbUp ? 200 : 503).send({
         status: dbUp ? 'ok' : 'degraded',

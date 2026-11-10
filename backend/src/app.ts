@@ -1,8 +1,19 @@
 import Fastify, { type FastifyInstance, type FastifyServerOptions } from 'fastify';
-import { registerErrorHandling } from './shared/errors.js';
+import cookie from '@fastify/cookie';
+import rateLimit from '@fastify/rate-limit';
+import type { Sql } from './db/client.js';
+import { AppError, registerErrorHandling } from './shared/errors.js';
+import { makeGuards } from './shared/authGuard.js';
 import { healthRoutes, type HealthDeps } from './modules/health/routes.js';
+import { identityRoutes } from './modules/identity/routes.js';
+import { identityService } from './modules/identity/service.js';
+import type { AuthConfig } from './modules/identity/tokens.js';
 
-export interface AppDeps extends HealthDeps {}
+export interface AppDeps extends HealthDeps {
+  /** Database + auth config. Without them only /api/health is registered (used by unit tests). */
+  sql?: Sql;
+  auth?: AuthConfig;
+}
 
 export interface BuildAppOptions {
   deps: AppDeps;
@@ -12,19 +23,51 @@ export interface BuildAppOptions {
 /**
  * Builds the Fastify instance without listening.
  * Shared by `server.ts` (local / production) and the Vercel Function entry (Task 19).
+ *
+ * Every route under /api requires a valid access token (default deny),
+ * unless it is registered with `config: { public: true }`.
  */
 export async function buildApp({ deps, logger = false }: BuildAppOptions): Promise<FastifyInstance> {
   // Logger options (incl. redaction of tokens/passwords) come from shared/logger.ts.
   const app = Fastify({ logger, trustProxy: true });
 
   registerErrorHandling(app);
+  await app.register(cookie);
+  await app.register(rateLimit, {
+    global: false,
+    errorResponseBuilder: (_req, ctx) =>
+      new AppError(
+        'TOO_MANY_REQUESTS',
+        `Terlalu banyak percobaan. Coba lagi dalam ${Math.ceil(ctx.ttl / 60_000)} menit`,
+        429,
+      ),
+  });
 
   await app.register(
     async (api) => {
+      if (deps.auth) api.addHook('onRequest', makeGuards(deps.auth).defaultDeny);
+
       await api.register(healthRoutes(deps));
+      if (deps.sql && deps.auth) {
+        await api.register(identityRoutes(identityService(deps.sql, deps.auth), deps.auth));
+      }
     },
     { prefix: '/api' },
   );
 
   return app;
 }
+
+/** Maps the validated api env onto the auth config used by the identity module and guards. */
+export const authConfigFromEnv = (env: {
+  JWT_SECRET: string;
+  ACCESS_TOKEN_TTL_SEC: number;
+  REFRESH_TOKEN_TTL_DAYS: number;
+  COOKIE_SECURE?: boolean | undefined;
+  NODE_ENV: string;
+}): AuthConfig => ({
+  jwtSecret: env.JWT_SECRET,
+  accessTtlSec: env.ACCESS_TOKEN_TTL_SEC,
+  refreshTtlDays: env.REFRESH_TOKEN_TTL_DAYS,
+  cookieSecure: env.COOKIE_SECURE ?? env.NODE_ENV === 'production',
+});
