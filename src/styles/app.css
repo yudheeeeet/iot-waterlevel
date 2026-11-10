@@ -242,7 +242,8 @@ button { font: inherit; color: inherit; }
 .gauge-card__device strong { font-size: var(--fs-body2); font-weight: 600; }
 .gauge-card__device span { font-size: var(--fs-caption); color: var(--color-text-muted); }
 .gauge { position: relative; width: 100%; max-width: 466px; margin: 0 auto; }
-.gauge svg { display: block; width: 100%; height: auto; overflow: visible; }
+.gauge > svg { display: block; width: 100%; height: auto; overflow: visible; }
+.gauge__value svg { width: 26px; height: 26px; flex: none; display: block; }
 .gauge path { stroke-linecap: butt; }
 .gauge__tick { font: 400 12px var(--font-text); fill: var(--color-text-muted); }
 .gauge__value { position: absolute; left: 50%; top: 40%; transform: translateX(-50%); display: flex; flex-direction: column; align-items: center; gap: 4px; }
