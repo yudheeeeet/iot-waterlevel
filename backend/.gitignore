@@ -1,0 +1,3 @@
+# Data Mosquitto lokal (berisi hash password & state broker)
+.mosquitto/
+coverage/
