@@ -84,6 +84,29 @@ describe.skipIf(!hasTestDb)('identity (DB)', () => {
     expect(after.statusCode).toBe(401);
   });
 
+  it('refresh and logout ignore the request body and its Content-Type', async () => {
+    const token = refreshCookieOf(await login('viewer@test.local', 'viewer-pass-123'))!.value;
+    const cases = [
+      { 'content-type': 'application/x-www-form-urlencoded' },
+      { 'content-type': 'application/json' }, // empty JSON body normally → 400
+      { 'content-type': 'text/plain' },
+    ];
+    let current = token;
+    for (const headers of cases) {
+      const res = await app.inject({ method: 'POST', url: '/api/auth/refresh', headers, cookies: { [REFRESH_COOKIE]: current } });
+      expect(res.statusCode, headers['content-type']).toBe(200);
+      current = refreshCookieOf(res)!.value;
+    }
+    const out = await app.inject({
+      method: 'POST',
+      url: '/api/auth/logout',
+      headers: { 'content-type': 'application/json' },
+      payload: '{"ignored":true}',
+      cookies: { [REFRESH_COOKIE]: current },
+    });
+    expect(out.statusCode).toBe(204);
+  });
+
   it('logout revokes the refresh token and clears the cookie', async () => {
     const token = refreshCookieOf(await login('viewer@test.local', 'viewer-pass-123'))!.value;
     const out = await app.inject({ method: 'POST', url: '/api/auth/logout', cookies: { [REFRESH_COOKIE]: token } });

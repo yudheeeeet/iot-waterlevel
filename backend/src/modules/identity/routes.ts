@@ -56,24 +56,35 @@ export const identityRoutes =
       },
     );
 
-    app.post('/auth/refresh', { config: { public: true } }, async (request, reply) => {
-      const token = request.cookies[REFRESH_COOKIE];
-      if (!token) throw new AppError('INVALID_SESSION', 'Sesi tidak valid, silakan login kembali', 401);
-      try {
-        const session = await service.refresh(token);
-        setRefreshCookie(reply, session);
-        return sessionBody(session);
-      } catch (err) {
-        clearRefreshCookie(reply);
-        throw err;
-      }
-    });
+    // refresh & logout read only the cookie. Their scope accepts any Content-Type and discards the
+    // body, so clients that send a default form/JSON header without a body don't get 415/400.
+    await app.register(async (scope) => {
+      scope.removeAllContentTypeParsers();
+      scope.addContentTypeParser('*', (_req, payload, done) => {
+        payload.resume();
+        payload.on('end', () => done(null, undefined));
+        payload.on('error', done);
+      });
 
-    // Public on purpose: logging out must work even when the access token has already expired.
-    app.post('/auth/logout', { config: { public: true } }, async (request, reply) => {
-      await service.logout(request.cookies[REFRESH_COOKIE]);
-      clearRefreshCookie(reply);
-      return reply.status(204).send();
+      scope.post('/auth/refresh', { config: { public: true } }, async (request, reply) => {
+        const token = request.cookies[REFRESH_COOKIE];
+        if (!token) throw new AppError('INVALID_SESSION', 'Sesi tidak valid, silakan login kembali', 401);
+        try {
+          const session = await service.refresh(token);
+          setRefreshCookie(reply, session);
+          return sessionBody(session);
+        } catch (err) {
+          clearRefreshCookie(reply);
+          throw err;
+        }
+      });
+
+      // Public on purpose: logging out must work even when the access token has already expired.
+      scope.post('/auth/logout', { config: { public: true } }, async (request, reply) => {
+        await service.logout(request.cookies[REFRESH_COOKIE]);
+        clearRefreshCookie(reply);
+        return reply.status(204).send();
+      });
     });
 
     app.get('/auth/me', async (request) => service.me(request.user!.id));
