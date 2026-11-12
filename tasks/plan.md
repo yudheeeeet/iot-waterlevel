@@ -97,10 +97,10 @@ T2 Docker + akun ┘          │                                               
 ## Task List
 
 ### Hari 1: Fondasi
-- [ ] T1: Scaffold backend (`app.ts`, `server.ts`, `worker.ts`, env, error format, `/health`)
-- [ ] T2: Setup lokal (database di PostgreSQL 18 + Mosquitto for Windows dengan Dynamic Security) + checklist akun layanan demo
-- [ ] T3: Skema database, migrasi, seed
-- [ ] T4: Login, refresh, logout, guard role, script `user:create`
+- [x] T1: Scaffold backend (`app.ts`, `server.ts`, `worker.ts`, env, error format, `/health`)
+- [x] T2: Setup lokal (database di PostgreSQL 18 + Mosquitto for Windows dengan Dynamic Security) + checklist akun layanan demo
+- [x] T3: Skema database, migrasi, seed
+- [x] T4: Login, refresh, logout, guard role, script `user:create`
 
 ### Checkpoint Hari 1 (audit)
 - [ ] Setup lokal dari nol mengikuti README berhasil
