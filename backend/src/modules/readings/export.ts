@@ -7,10 +7,12 @@ import { parseRange } from './range.js';
 
 /**
  * PRD RD-6: export of STORED readings (not carried forward) for one device, max 90 days, every role.
- * Streams rows from a DB cursor straight into the response, so memory stays flat for long ranges.
+ * Rows are streamed page by page (keyset pagination on ts, primary-key ordered), so memory stays flat.
+ * Each page is an independent query: this works through the Supabase transaction pooler, where a
+ * server-side cursor would not survive between statements.
  */
 export const EXPORT_COLUMNS = ['device_id', 'waktu_wib', 'timestamp_utc', 'distance_cm', 'distance_m', 'status'] as const;
-const CURSOR_ROWS = 2_000;
+const PAGE_ROWS = 5_000;
 
 const Format = z.object({ format: z.enum(['csv', 'xlsx'], { error: 'format harus csv atau xlsx' }).default('csv') });
 
@@ -41,11 +43,19 @@ export function exportReadings(sql: Sql, deviceId: string, query: unknown, now =
   const day = (d: Date) => wib(d).slice(0, 10);
   const filename = `${deviceId}_readings_${day(from)}_${day(to)}.${format}`;
 
-  const rows = () =>
-    sql<Row[]>`
-      select ts, level_cm as level, status from readings
-      where device_id = ${deviceId} and channel = 1 and ts >= ${from} and ts < ${to}
-      order by ts`.cursor(CURSOR_ROWS);
+  async function* rows(): AsyncGenerator<Row[]> {
+    let after: Date | null = null;
+    for (;;) {
+      const page: Row[] = await sql<Row[]>`
+        select ts, level_cm as level, status from readings
+        where device_id = ${deviceId} and channel = 1 and ts < ${to}
+          and ${after ? sql`ts > ${after}` : sql`ts >= ${from}`}
+        order by ts limit ${PAGE_ROWS}`;
+      if (page.length) yield page;
+      if (page.length < PAGE_ROWS) return;
+      after = page[page.length - 1]!.ts;
+    }
+  }
   const values = (r: Row) => {
     const cm = Number(r.level);
     return [deviceId, wib(r.ts), r.ts.toISOString(), cm, +(cm / 100).toFixed(4), r.status] as const;

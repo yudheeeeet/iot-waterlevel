@@ -1,34 +1,16 @@
 import { loadApiEnv } from './config/env.js';
-import { createSql, pingDb } from './db/client.js';
-import { authConfigFromEnv, buildApp } from './app.js';
+import { createSql } from './db/client.js';
+import { buildApp } from './app.js';
+import { apiDeps } from './apiDeps.js';
 import { loggerOptions } from './shared/logger.js';
 import { createBroker } from './modules/devices/broker/index.js';
-import { workerState } from './modules/health/workerStatus.js';
 
+/** Long-running api (local development / own server). Vercel uses src/vercel.ts instead. */
 const env = loadApiEnv();
-const sql = createSql(env.DATABASE_URL);
+const sql = createSql(env.DATABASE_URL, { max: env.DB_POOL_MAX });
 const broker = createBroker(env, 'baruna-api');
 
-const app = await buildApp({
-  deps: {
-    checkDb: () => pingDb(sql),
-    checkWorker: () => workerState(sql),
-    sql,
-    auth: authConfigFromEnv(env),
-    broker,
-    mqttPublic: { host: env.MQTT_PUBLIC_HOST, port: env.MQTT_PUBLIC_PORT, tls: env.MQTT_PUBLIC_TLS },
-    reservedDeviceIds: env.MQTT_USERNAME ? [env.MQTT_USERNAME] : [],
-    weather: {
-      locationName: env.WEATHER_LOCATION_NAME,
-      lat: env.WEATHER_LAT,
-      lon: env.WEATHER_LON,
-      bmkgAdm4: env.WEATHER_BMKG_ADM4,
-      bmkgBaseUrl: env.BMKG_BASE_URL.replace(/\/$/, ''),
-      openMeteoUrl: env.OPEN_METEO_URL,
-    },
-  },
-  logger: loggerOptions(env),
-});
+const app = await buildApp({ deps: apiDeps(env, sql, broker), logger: loggerOptions(env) });
 
 const shutdown = async (signal: string) => {
   app.log.info({ signal }, 'shutting down api');

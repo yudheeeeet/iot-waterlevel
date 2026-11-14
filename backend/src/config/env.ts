@@ -34,6 +34,10 @@ const ApiBaseSchema = BaseEnvSchema.extend({
   REFRESH_TOKEN_TTL_DAYS: z.coerce.number().int().min(1).max(90).default(7),
   /** Secure cookie flag; defaults to true in production. */
   COOKIE_SECURE: bool.optional(),
+  /** Vercel Cron secret for /api/cron/keepalive (min 16 chars). Unset = endpoint disabled. */
+  CRON_SECRET: z.string().min(16, 'CRON_SECRET minimal 16 karakter').optional(),
+  /** Max DB connections per process (serverless: keep small). */
+  DB_POOL_MAX: z.coerce.number().int().min(1).max(50).default(5),
   /** Weather location (PRD WX-1), same defaults as the frontend. */
   WEATHER_LOCATION_NAME: z.string().min(1).default('Bogor'),
   WEATHER_LAT: z.coerce.number().min(-90).max(90).default(-6.595),

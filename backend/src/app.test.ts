@@ -31,6 +31,22 @@ describe('GET /api/health', () => {
   });
 });
 
+describe('GET /api/cron/keepalive', () => {
+  const app = () => buildApp({ deps: { checkDb: async () => true, cronSecret: 's'.repeat(32) } });
+  it('requires the cron secret', async () => {
+    const a = await app();
+    expect((await a.inject({ method: 'GET', url: '/api/cron/keepalive' })).statusCode).toBe(401);
+    expect((await a.inject({ method: 'GET', url: '/api/cron/keepalive', headers: { authorization: 'Bearer wrong' } })).statusCode).toBe(401);
+    const ok = await a.inject({ method: 'GET', url: '/api/cron/keepalive', headers: { authorization: `Bearer ${'s'.repeat(32)}` } });
+    expect(ok.statusCode).toBe(200);
+    expect(ok.json().ok).toBe(true);
+  });
+  it('is disabled without a configured secret', async () => {
+    const a = await buildApp({ deps: { checkDb: async () => true } });
+    expect((await a.inject({ method: 'GET', url: '/api/cron/keepalive', headers: { authorization: 'Bearer ' } })).statusCode).toBe(401);
+  });
+});
+
 describe('error format', () => {
   it('unknown route → 404 with uniform error body', async () => {
     const app = await build();

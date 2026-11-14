@@ -20,6 +20,9 @@ export function createBroker(env: BrokerEnv, clientIdPrefix: string, existing?: 
   if (env.BROKER_PROVIDER === 'manual') return manualProvisioner();
   const client =
     existing ?? connectMqtt({ url: env.MQTT_URL!, username: env.MQTT_USERNAME!, password: env.MQTT_PASSWORD! }, clientIdPrefix);
+  // Connection errors surface per command as BROKER_UNAVAILABLE / BROKER_TIMEOUT; without a listener an
+  // 'error' event would crash the process.
+  if (!existing) client.on('error', () => {});
   const broker = mosquittoDynsec(client);
   return {
     ...broker,
