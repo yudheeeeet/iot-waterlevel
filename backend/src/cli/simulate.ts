@@ -153,7 +153,6 @@ const publish = (c: MqttClient, topic: string, payload: string) =>
   );
 
 let sent = 0;
-let timer: NodeJS.Timeout | undefined;
 async function tick() {
   for (const s of clients) {
     const reading = { ts: new Date(Date.now() + skewMs).toISOString(), level: level(s.step++, s.idx) };
@@ -179,6 +178,6 @@ async function stop() {
   process.exit(0);
 }
 
-timer = setInterval(() => void tick(), intervalMs);
+const timer = setInterval(() => void tick(), intervalMs); // before the first tick: --count 1 stops inside it
 await tick();
 process.once('SIGINT', () => void stop());
