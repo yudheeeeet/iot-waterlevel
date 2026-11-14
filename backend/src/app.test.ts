@@ -51,4 +51,30 @@ describe('error format', () => {
     expect(res.json().error.code).toBe('INTERNAL_ERROR');
     expect(res.body).not.toContain('secret');
   });
+
+  it('empty POST body is accepted with any Content-Type; non-JSON bodies → 415; bad JSON → 400', async () => {
+    const app = await build();
+    app.post('/echo', async (request) => ({ body: request.body ?? null }));
+    for (const type of ['application/x-www-form-urlencoded', 'application/json', 'text/plain']) {
+      const res = await app.inject({ method: 'POST', url: '/echo', headers: { 'content-type': type } });
+      expect(res.statusCode, type).toBe(200);
+      expect(res.json()).toEqual({ body: null });
+    }
+    const ok = await app.inject({ method: 'POST', url: '/echo', payload: { a: 1 } });
+    expect(ok.json()).toEqual({ body: { a: 1 } });
+
+    const form = await app.inject({ method: 'POST', url: '/echo', headers: { 'content-type': 'text/plain' }, payload: 'a=1' });
+    expect(form.statusCode).toBe(415);
+    expect(form.json().error.code).toBe('UNSUPPORTED_MEDIA_TYPE');
+
+    const bad = await app.inject({ method: 'POST', url: '/echo', headers: { 'content-type': 'application/json' }, payload: '{bad' });
+    expect(bad.statusCode).toBe(400);
+    const proto = await app.inject({
+      method: 'POST',
+      url: '/echo',
+      headers: { 'content-type': 'application/json' },
+      payload: '{"__proto__":{"x":1}}',
+    });
+    expect(proto.statusCode).toBe(400);
+  });
 });

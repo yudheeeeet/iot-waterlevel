@@ -40,6 +40,7 @@ export async function buildApp({ deps, logger = false }: BuildAppOptions): Promi
   const app = Fastify({ logger, trustProxy: true });
 
   registerErrorHandling(app);
+  registerBodyParsing(app);
   await app.register(cookie);
   await app.register(rateLimit, {
     global: false,
@@ -90,3 +91,21 @@ export const authConfigFromEnv = (env: {
   refreshTtlDays: env.REFRESH_TOKEN_TTL_DAYS,
   cookieSecure: env.COOKIE_SECURE ?? env.NODE_ENV === 'production',
 });
+
+/**
+ * Body-less POSTs (refresh, logout, token rotate) must work whatever Content-Type the client adds:
+ * an empty body is accepted as `undefined` for any type. A non-empty body must be JSON (else 415).
+ * JSON keeps Fastify's own parser (prototype-poisoning protection).
+ */
+function registerBodyParsing(app: FastifyInstance): void {
+  const json = app.getDefaultJsonParser('error', 'error');
+  app.removeContentTypeParser(['application/json', 'text/plain']);
+  app.addContentTypeParser('application/json', { parseAs: 'string' }, (req, body, done) =>
+    body === '' ? done(null, undefined) : json(req, body as string, done),
+  );
+  app.addContentTypeParser('*', { parseAs: 'string' }, (_req, body, done) =>
+    body === ''
+      ? done(null, undefined)
+      : done(new AppError('UNSUPPORTED_MEDIA_TYPE', 'Body harus JSON (Content-Type: application/json)', 415)),
+  );
+}
