@@ -269,13 +269,13 @@ Konfigurasi dipisah di `config.h` (contoh `config.example.h`, yang asli tidak di
 **Description:** `GET /api/devices/:id/readings?from&to` (default 24 jam, maks 90 hari) → `{ deviceId, intervalSec, points: [{ timestamp, distanceCm }] }`. Fungsi murni `downsample` (> 600 titik → rata-rata per bucket, `date_bin` di SQL) dan `carryForward` (isi bucket kosong dengan nilai terakhir selama online; `null` saat offline berdasarkan `device_status_events`).
 
 **Acceptance criteria:**
-- [ ] Rentang 24 jam data per menit → ≤ 600 titik dengan `intervalSec` benar
-- [ ] Periode nilai konstan tampil sebagai garis datar, bukan celah; periode offline tampil `null`
-- [ ] Rentang > 90 hari atau `from > to` → 400
+- [x] Rentang 24 jam data per menit → ≤ 600 titik dengan `intervalSec` benar
+- [x] Periode nilai konstan tampil sebagai garis datar, bukan celah; periode offline tampil `null`
+- [x] Rentang > 90 hari atau `from > to` → 400
 
 **Verification:**
-- [ ] Tests pass: `npm run test -- readings`
-- [ ] Manual: bandingkan bentuk response dengan `mockBackend.js` → `getReadings`
+- [x] Tests pass: `npm run test -- readings`
+- [x] Manual: bandingkan bentuk response dengan `mockBackend.js` → `getReadings`
 
 **Dependencies:** T10, T11
 **Files likely touched:** `backend/src/modules/readings/routes.ts`, `.../readings/service.ts`, `.../readings/downsample.ts`, `.../readings/carryForward.ts`, `.../readings/*.test.ts`
@@ -287,12 +287,12 @@ Konfigurasi dipisah di `config.h` (contoh `config.example.h`, yang asli tidak di
 **Description:** `GET /api/summary` → `{ averageDistanceM, devices: { total, online, offline }, latestReading, rainfallTodayMm, lastUpdate }` sesuai README. Pastikan `GET /api/devices` mengisi `online`, `status`, `lastReading: { distanceCm, timestamp }`.
 
 **Acceptance criteria:**
-- [ ] Bentuk response summary & devices identik dengan `mockBackend.js`
-- [ ] `averageDistanceM` hanya dari device online yang punya last reading
-- [ ] `rainfallTodayMm` dari cache cuaca bila ada, selain itu `null`
+- [x] Bentuk response summary & devices identik dengan `mockBackend.js`
+- [x] `averageDistanceM` hanya dari device online yang punya last reading
+- [x] `rainfallTodayMm` dari cache cuaca bila ada, selain itu `null`
 
 **Verification:**
-- [ ] Tests pass: `npm run test -- summary`
+- [x] Tests pass: `npm run test -- summary`
 - [ ] Manual: frontend lokal dengan `VITE_USE_MOCK=false` menampilkan kartu summary
 
 **Dependencies:** T11
@@ -305,9 +305,9 @@ Konfigurasi dipisah di `config.h` (contoh `config.example.h`, yang asli tidak di
 **Description:** `GET /api/devices/:id/readings/export?format=csv|xlsx&from&to`, streaming, maks 90 hari, semua role. Kolom: waktu (WIB), jarak (cm), status. `Content-Disposition` dengan nama file yang jelas. Harus selesai dalam batas durasi Vercel Function.
 
 **Acceptance criteria:**
-- [ ] Admin & viewer bisa mengunduh CSV dan XLSX yang terbuka benar di Excel
+- [x] Admin & viewer bisa mengunduh CSV dan XLSX yang terbuka benar di Excel
 - [ ] Export 30 hari untuk 1 device < 10 detik (diukur di Vercel)
-- [ ] Format tidak dikenal → 400
+- [x] Format tidak dikenal → 400
 
 **Verification:**
 - [ ] Manual: unduh dari tombol export di frontend dan buka di Excel
@@ -322,12 +322,12 @@ Konfigurasi dipisah di `config.h` (contoh `config.example.h`, yang asli tidak di
 **Description:** Porting `src/services/weather/{bmkg,openMeteo,weatherService}.js` ke backend: BMKG hari 1–3, Open-Meteo hari 4–7 + "feels like" + fallback penuh. Cache 30 menit di `weather_cache` (di DB, karena Vercel Function tidak menyimpan memori antar-request). Keduanya gagal → cache lama + `stale: true`; tanpa cache → 503. Lokasi dari env `WEATHER_*`.
 
 **Acceptance criteria:**
-- [ ] `GET /api/weather` mengembalikan `{ location, today, forecast[7], sources, fetchedAt }` sama dengan output frontend mode `direct`
-- [ ] Dua request dalam 30 menit → hanya 1 panggilan ke BMKG/Open-Meteo
-- [ ] BMKG gagal (URL salah) → forecast 7 hari dari Open-Meteo
+- [x] `GET /api/weather` mengembalikan `{ location, today, forecast[7], sources, fetchedAt }` sama dengan output frontend mode `direct`
+- [x] Dua request dalam 30 menit → hanya 1 panggilan ke BMKG/Open-Meteo
+- [x] BMKG gagal (URL salah) → forecast 7 hari dari Open-Meteo
 
 **Verification:**
-- [ ] Tests pass: `npm run test -- weather` (merge dengan fixture JSON)
+- [x] Tests pass: `npm run test -- weather` (merge dengan fixture JSON)
 - [ ] Manual: frontend dengan `VITE_WEATHER_SOURCE=backend`
 
 **Dependencies:** T3

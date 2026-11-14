@@ -87,6 +87,15 @@ akun tanpa device dihapus, device tanpa akun ditandai `needs_token_rotation` (pe
 | `POST /api/devices/:id/token/rotate` | admin | token baru, token lama langsung ditolak broker |
 | `DELETE /api/devices/:id` | admin | soft delete; histori tetap; ID tidak bisa dipakai ulang |
 
+## Data untuk dashboard
+
+| Endpoint | Akses | Keterangan |
+|---|---|---|
+| `GET /api/summary` | login | `{ averageDistanceM, devices: {total, online, offline}, latestReading, rainfallTodayMm, lastUpdate }` |
+| `GET /api/devices/:id/readings?from&to` | login | default 24 jam, maks 90 hari; ≤ 600 titik; nilai tetap diteruskan selama online, `null` saat offline |
+| `GET /api/devices/:id/readings/export?format=csv\|xlsx&from&to` | login | titik yang tersimpan saja, waktu WIB; XLSX berisi sheet `Info` |
+| `GET /api/weather` | login | BMKG (hari 1–3) + Open-Meteo (hari 4–7), cache 30 menit di DB; lokasi dari `WEATHER_*` |
+
 - `BROKER_PROVIDER=mosquitto`: akun device dibuat/diubah/dihapus otomatis. Device hanya boleh publish ke
   `baruna/devices/{id}/readings` dan `/status`. Gagal sinkron → `brokerSyncStatus: "error"` + `brokerError`; ulangi dengan rotasi token.
 - `BROKER_PROVIDER=manual` (HiveMQ Cloud): response berisi `brokerSetup.steps` untuk dikerjakan di console HiveMQ,

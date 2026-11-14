@@ -131,10 +131,10 @@ T2 Docker + akun ┘          │                                               
 - [ ] Device offline setelah 5 menit; worker reconnect sendiri setelah koneksi putus
 
 ### Hari 4: Data Keluar
-- [ ] T13: Histori readings (downsampling + carry forward)
-- [ ] T14: Summary + bentuk daftar device
-- [ ] T15: Export CSV/XLSX
-- [ ] T16: Cuaca Bogor (BMKG + Open-Meteo, cache)
+- [x] T13: Histori readings (downsampling + carry forward)
+- [x] T14: Summary + bentuk daftar device
+- [x] T15: Export CSV/XLSX
+- [x] T16: Cuaca Bogor (BMKG + Open-Meteo, cache)
 
 ### Checkpoint Hari 4 (audit)
 - [ ] Semua endpoint MVP (PRD §5) sesuai bentuk data `src/mocks/mockBackend.js`
