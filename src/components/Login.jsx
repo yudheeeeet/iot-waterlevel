@@ -31,7 +31,10 @@ export default function Login() {
   return (
     <div className="login-page">
       <form className="card login-card" onSubmit={submit}>
-        <img className="login-card__logo" src={logoUrl} alt="Baruna Inotek" />
+        {/* The logo is white (made for the navy header), so it sits on a navy band. */}
+        <div className="login-card__brand">
+          <img className="login-card__logo" src={logoUrl} alt="Baruna Inotek" />
+        </div>
         <div>
           <h1 className="login-card__title">Water Level Monitoring</h1>
           <p className="section-sub">Sign in to continue</p>
