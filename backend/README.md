@@ -54,6 +54,19 @@ Cek cepat (terminal lain):
 # → "Timed out" (tersambung, belum ada pesan, benar)
 ```
 
+### 3b. Broker untuk uji ESP32 lewat WiFi (opsional)
+ESP32 dan laptop harus di WiFi yang sama (mis. hotspot HP). Sekali saja, buka PowerShell **sebagai Administrator** di folder `backend`:
+```powershell
+powershell -ExecutionPolicy Bypass -File deploy\local\open-firewall.ps1
+```
+Script ini membuka port 1884 hanya untuk jaringan **Private** dan menawarkan menjadikan jaringan saat ini Private
+(jawab `y` hanya untuk jaringan milik sendiri). Lalu jalankan broker dengan:
+```powershell
+npm run broker:lan     # menggantikan broker:local; menampilkan IP laptop untuk firmware
+```
+Isi `MQTT_PUBLIC_HOST` di `.env` dengan IP yang ditampilkan. IP bisa berubah bila hotspot dinyalakan ulang
+(`broker:lan` memberi peringatan bila berbeda). Broker tetap wajib login, dan device hanya bisa publish ke topic miliknya.
+
 ### 4. Menjalankan
 ```powershell
 npm run dev            # api
@@ -88,7 +101,8 @@ akun tanpa device dihapus, device tanpa akun ditandai `needs_token_rotation` (pe
 | `npm run db:check` / `db:migrate` / `db:seed` | Cek koneksi, migrasi, data awal (memakai `DATABASE_URL`) |
 | `npm run user:create -- --email a@b.c --name "Nama" --role admin\|viewer` | Membuat user; password acak dicetak sekali (atau `--password`) |
 | `npm run user:reset-password -- --email a@b.c` | Reset password + cabut semua sesi |
-| `npm run broker:init` / `broker:local` | Setup & menjalankan Mosquitto lokal |
+| `npm run broker:init` / `broker:local` | Setup & menjalankan Mosquitto lokal (hanya dari laptop) |
+| `npm run broker:lan` | Mosquitto lokal yang bisa diakses dari WiFi yang sama (uji ESP32) |
 | `npm run broker:ping` | Uji koneksi broker di `.env` (connect, subscribe, publish → terima, latency) |
 | `npm run broker:ping -- --env .env.hivemq` | Sama, untuk broker lain (mis. HiveMQ Cloud) tanpa mengubah `.env` |
 

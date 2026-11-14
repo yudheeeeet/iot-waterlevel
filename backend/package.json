@@ -23,6 +23,7 @@
     "user:reset-password": "tsx src/cli/user-reset-password.ts",
     "broker:init": "powershell -NoProfile -ExecutionPolicy Bypass -File deploy/local/init-dynsec.ps1",
     "broker:local": "powershell -NoProfile -ExecutionPolicy Bypass -File deploy/local/start-broker.ps1",
+    "broker:lan": "powershell -NoProfile -ExecutionPolicy Bypass -File deploy/local/start-broker.ps1 -Lan",
     "broker:ping": "tsx src/cli/broker-ping.ts"
   },
   "dependencies": {
