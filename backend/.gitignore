@@ -1,3 +1,6 @@
 # Data Mosquitto lokal (berisi hash password & state broker)
 .mosquitto/
 coverage/
+# File env tambahan (mis. .env.hivemq) berisi credential; hanya .env.example yang di-commit
+.env.*
+!.env.example

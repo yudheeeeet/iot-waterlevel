@@ -22,7 +22,8 @@
     "user:create": "tsx src/cli/user-create.ts",
     "user:reset-password": "tsx src/cli/user-reset-password.ts",
     "broker:init": "powershell -NoProfile -ExecutionPolicy Bypass -File deploy/local/init-dynsec.ps1",
-    "broker:local": "powershell -NoProfile -ExecutionPolicy Bypass -File deploy/local/start-broker.ps1"
+    "broker:local": "powershell -NoProfile -ExecutionPolicy Bypass -File deploy/local/start-broker.ps1",
+    "broker:ping": "tsx src/cli/broker-ping.ts"
   },
   "dependencies": {
     "@fastify/cookie": "^11.1.5",

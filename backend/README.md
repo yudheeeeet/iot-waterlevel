@@ -89,6 +89,8 @@ akun tanpa device dihapus, device tanpa akun ditandai `needs_token_rotation` (pe
 | `npm run user:create -- --email a@b.c --name "Nama" --role admin\|viewer` | Membuat user; password acak dicetak sekali (atau `--password`) |
 | `npm run user:reset-password -- --email a@b.c` | Reset password + cabut semua sesi |
 | `npm run broker:init` / `broker:local` | Setup & menjalankan Mosquitto lokal |
+| `npm run broker:ping` | Uji koneksi broker di `.env` (connect, subscribe, publish → terima, latency) |
+| `npm run broker:ping -- --env .env.hivemq` | Sama, untuk broker lain (mis. HiveMQ Cloud) tanpa mengubah `.env` |
 
 ## Checklist akun layanan untuk demo (oleh Gilang)
 
