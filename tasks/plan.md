@@ -109,9 +109,9 @@ T2 Docker + akun ┘          │                                               
 - [ ] Akun Supabase, HiveMQ Cloud, dan Vercel sudah dibuat; migrasi berhasil dijalankan ke Supabase
 
 ### Hari 2: Device & Broker
-- [ ] T5: Adapter broker (`mosquitto` via Dynamic Security, `manual` untuk HiveMQ)
-- [ ] T6: CRUD device + penerbitan token
-- [ ] T7: Rotasi token, aktif/nonaktif, rekonsiliasi (mode `mosquitto`)
+- [x] T5: Adapter broker (`mosquitto` via Dynamic Security, `manual` untuk HiveMQ) — langkah HiveMQ menunggu uji manual Gilang
+- [x] T6: CRUD device + penerbitan token
+- [x] T7: Rotasi token, aktif/nonaktif, rekonsiliasi (mode `mosquitto`)
 
 ### Checkpoint Hari 2 (audit)
 - [ ] Mosquitto lokal: buat device → token → publish berhasil; token salah/rotasi/nonaktif ditolak

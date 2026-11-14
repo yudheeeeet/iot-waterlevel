@@ -43,6 +43,7 @@ Broker proyek berjalan di **port 1884**, terpisah dari service Mosquitto bawaan 
 Data & akun disimpan di `backend/.mosquitto/` (tidak di-commit).
 ```powershell
 npm run broker:init    # sekali: Dynamic Security + akun baruna-backend (password dari .env)
+                       # aman dijalankan ulang; jalankan ulang setelah update (hentikan broker:local dulu)
 npm run broker:local   # menjalankan broker (biarkan terminal ini terbuka)
 ```
 Cek cepat (terminal lain):
@@ -58,12 +59,30 @@ Cek cepat (terminal lain):
 npm run dev            # api
 npm run worker         # worker (terminal lain)
 ```
+Worker menyamakan akun device di Mosquitto dengan database setiap kali tersambung ke broker:
+akun tanpa device dihapus, device tanpa akun ditandai `needs_token_rotation` (perbaiki dengan rotasi token).
+
+## Device & broker
+
+| Endpoint | Akses | Keterangan |
+|---|---|---|
+| `GET /api/devices`, `GET /api/devices/:id` | login | `online` dihitung saat dibaca |
+| `POST /api/devices` | admin | body `{ id, name, lat, lon, reportingIntervalSec?, thresholdWarningCm?, thresholdCriticalCm?, installedAt? }` → device + `token` (**sekali tampil**) + `mqtt` |
+| `PATCH /api/devices/:id` | admin | nama, lokasi, interval, threshold, `isEnabled`, `brokerSynced: true` (mode manual) |
+| `POST /api/devices/:id/token/rotate` | admin | token baru, token lama langsung ditolak broker |
+| `DELETE /api/devices/:id` | admin | soft delete; histori tetap; ID tidak bisa dipakai ulang |
+
+- `BROKER_PROVIDER=mosquitto`: akun device dibuat/diubah/dihapus otomatis. Device hanya boleh publish ke
+  `baruna/devices/{id}/readings` dan `/status`. Gagal sinkron → `brokerSyncStatus: "error"` + `brokerError`; ulangi dengan rotasi token.
+- `BROKER_PROVIDER=manual` (HiveMQ Cloud): response berisi `brokerSetup.steps` untuk dikerjakan di console HiveMQ,
+  status `pending` sampai admin mengirim `PATCH { "brokerSynced": true }`.
+- ID `admin`, `baruna-backend`, dan `MQTT_USERNAME` dicadangkan untuk akun sistem broker.
 
 ## Perintah
 
 | Perintah | Keterangan |
 |---|---|
-| `npm test` | Unit + integration test. Test database memakai `TEST_DATABASE_URL` (dikosongkan & dimigrasi ulang); dilewati bila belum diisi |
+| `npm test` | Unit + integration test. Test database memakai `TEST_DATABASE_URL` (dikosongkan & dimigrasi ulang); dilewati bila belum diisi. Test broker memakai Mosquitto lokal (`npm run broker:local`, hanya `127.0.0.1`/`localhost`); dilewati bila tidak berjalan |
 | `npm run lint` | ESLint + TypeScript check |
 | `npm run build` | Kompilasi ke `dist/` |
 | `npm run db:check` / `db:migrate` / `db:seed` | Cek koneksi, migrasi, data awal (memakai `DATABASE_URL`) |

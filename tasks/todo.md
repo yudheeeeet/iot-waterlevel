@@ -100,13 +100,13 @@
 Pilihan lewat `BROKER_PROVIDER`.
 
 **Acceptance criteria:**
-- [ ] Mode `mosquitto`: device yang dibuat bisa connect & publish ke topic miliknya; publish ke topic device lain ditolak; setelah `setPassword`/`disable`/`delete` koneksi lama ditolak
-- [ ] Broker tidak membalas dalam 5 detik → error `BROKER_TIMEOUT`
+- [x] Mode `mosquitto`: device yang dibuat bisa connect & publish ke topic miliknya; publish ke topic device lain ditolak; setelah `setPassword`/`disable`/`delete` koneksi lama ditolak
+- [x] Broker tidak membalas dalam 5 detik → error `BROKER_TIMEOUT`
 - [ ] Mode `manual`: langkah setup yang dihasilkan, bila diikuti di console HiveMQ, membuat device bisa publish (diverifikasi manual sekali; catat apakah permission per topic tersedia di paket free)
 
 **Verification:**
-- [ ] Tests pass: `npm run test -- broker` (mode `mosquitto` ke Mosquitto lokal)
-- [ ] Manual: `mosquitto_pub -u <id> -P <token> -t baruna/devices/<id>/readings`
+- [x] Tests pass: `npm run test -- broker` (mode `mosquitto` ke Mosquitto lokal)
+- [x] Manual: `mosquitto_pub -u <id> -P <token> -t baruna/devices/<id>/readings`
 
 **Fallback bila > 3 jam macet di Dynamic Security:** password file + ACL file Mosquitto yang ditulis backend + reload broker. Dicatat sebagai utang F2.
 
@@ -120,13 +120,13 @@ Pilihan lewat `BROKER_PROVIDER`.
 **Description:** `GET/POST /api/devices`, `PATCH/DELETE /api/devices/:id`. POST: buat device + token `bwn_…` (disimpan hash SHA-256 + 4 karakter terakhir) + panggil provisioner. Response berisi `token` (sekali tampil), `mqtt: { host, port, tls, topic, username }` dari env `MQTT_PUBLIC_*`, dan `brokerSetup` (mode `manual`). PATCH `brokerSynced: true` untuk menandai setup manual selesai. DELETE = soft delete + hapus di broker. Bentuk Device mengikuti README frontend; `online` dihitung saat dibaca (`now - last_seen_at <= offline_after_sec`).
 
 **Acceptance criteria:**
-- [ ] Admin membuat device → token + info MQTT; token tidak pernah muncul lagi di `GET /devices` maupun di log
-- [ ] Validasi: `lat`/`lon` di luar rentang → 400; ID duplikat → 409 (format error seragam)
-- [ ] Viewer → 403 untuk POST/PATCH/DELETE; gagal sinkron broker (mode `mosquitto`) → `broker_sync_status='error'` + error jelas
+- [x] Admin membuat device → token + info MQTT; token tidak pernah muncul lagi di `GET /devices` maupun di log
+- [x] Validasi: `lat`/`lon` di luar rentang → 400; ID duplikat → 409 (format error seragam)
+- [x] Viewer → 403 untuk POST/PATCH/DELETE; gagal sinkron broker (mode `mosquitto`) → `broker_sync_status='error'` + error jelas
 
 **Verification:**
-- [ ] Tests pass: `npm run test -- devices`
-- [ ] Manual: buat device dengan curl → publish memakai token dari response berhasil
+- [x] Tests pass: `npm run test -- devices`
+- [x] Manual: buat device dengan curl → publish memakai token dari response berhasil
 
 **Dependencies:** T4, T5
 **Files likely touched:** `backend/src/modules/devices/routes.ts`, `.../devices/service.ts`, `.../devices/repo.ts`, `.../devices/deviceToken.ts`, `.../devices/schemas.ts`
@@ -138,13 +138,13 @@ Pilihan lewat `BROKER_PROVIDER`.
 **Description:** `POST /api/devices/:id/token/rotate` (token lama langsung tidak berlaku; mode `manual` mengembalikan langkah update password di HiveMQ). `PATCH isEnabled` → enable/disable di broker. Worker saat start (mode `mosquitto`): samakan akun Mosquitto dengan DB (hapus akun liar; device yang akunnya hilang → `needs_token_rotation`).
 
 **Acceptance criteria:**
-- [ ] Mode `mosquitto`: setelah rotasi token lama ditolak & baru diterima; `isEnabled=false` → ditolak, `true` → diterima lagi
-- [ ] Akun liar di Mosquitto terhapus saat worker restart; device yang akunnya hilang ditandai `needs_token_rotation`
-- [ ] Mode `manual`: rotasi menghasilkan token baru + langkah update credential
+- [x] Mode `mosquitto`: setelah rotasi token lama ditolak & baru diterima; `isEnabled=false` → ditolak, `true` → diterima lagi
+- [x] Akun liar di Mosquitto terhapus saat worker restart; device yang akunnya hilang ditandai `needs_token_rotation`
+- [x] Mode `manual`: rotasi menghasilkan token baru + langkah update credential
 
 **Verification:**
-- [ ] Tests pass: `npm run test -- devices`
-- [ ] Manual: hapus akun device langsung di Mosquitto → restart worker → cek status device
+- [x] Tests pass: `npm run test -- devices`
+- [x] Manual: hapus akun device langsung di Mosquitto → restart worker → cek status device
 
 **Dependencies:** T6
 **Files likely touched:** `backend/src/modules/devices/routes.ts`, `.../devices/service.ts`, `.../devices/reconcile.ts`, `backend/src/worker.ts`
