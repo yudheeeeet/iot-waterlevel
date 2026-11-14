@@ -69,7 +69,7 @@ export async function buildApp({ deps, logger = false }: BuildAppOptions): Promi
       if (deps.sql && deps.auth) {
         await api.register(identityRoutes(identityService(deps.sql, deps.auth), deps.auth));
         await api.register(
-          readingsRoutes(readingsService(deps.sql, deps.weather ? { weatherCacheKey: weatherCacheKey(deps.weather) } : {})),
+          readingsRoutes(readingsService(deps.sql, deps.weather ? { weatherCacheKey: weatherCacheKey(deps.weather) } : {}), deps.sql),
         );
         if (deps.weather) {
           await api.register(weatherRoutes(weatherService(deps.sql, deps.weather, deps.fetch ?? fetch, api.log)));
