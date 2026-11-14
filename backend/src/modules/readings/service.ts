@@ -1,6 +1,7 @@
 import type { Sql } from '../../db/client.js';
 import { AppError } from '../../shared/errors.js';
-import { devicesRepo, type DeviceRow } from '../devices/repo.js';
+import { devicesRepo, onlineSql, type DeviceRow } from '../devices/repo.js';
+import { jakartaDateKey } from '../weather/merge.js';
 import { DEVICE_ID_PATTERN } from '../devices/schemas.js';
 import { parseRange } from './range.js';
 import { buildSeries, offlineIntervals, pickStepMs, type Point, type PresenceEventLite } from './series.js';
@@ -11,7 +12,16 @@ export interface History {
   points: Point[];
 }
 
-export function readingsService(sql: Sql) {
+/** GET /api/summary — same shape as getSummary() in src/mocks/mockBackend.js. */
+export interface Summary {
+  averageDistanceM: number | null;
+  devices: { total: number; online: number; offline: number };
+  latestReading: { deviceId: string; distanceCm: number; timestamp: string } | null;
+  rainfallTodayMm: number | null;
+  lastUpdate: string;
+}
+
+export function readingsService(sql: Sql, opts: { weatherCacheKey?: string } = {}) {
   const devices = devicesRepo(sql);
 
   /** Existing (not deleted) device, or 404. */
@@ -23,6 +33,39 @@ export function readingsService(sql: Sql) {
 
   return {
     mustFind,
+
+    /**
+     * averageDistanceM: mean last reading of ONLINE devices that have one (m, 2 decimals).
+     * latestReading: newest last reading among online devices (as the mock does).
+     * rainfallTodayMm: today's estimate from the weather cache (fetched today, WIB), else null.
+     */
+    async summary(now = new Date()): Promise<Summary> {
+      const [counts] = await sql<{ total: number; online: number; avgCm: number | null }[]>`
+        select count(*)::int as total,
+               count(*) filter (where ${onlineSql(sql)})::int as online,
+               (avg(d.last_reading_cm) filter (where ${onlineSql(sql)} and d.last_reading_cm is not null))::float8 as "avgCm"
+        from devices d where d.deleted_at is null`;
+      const [latest] = await sql<{ id: string; cm: string; at: Date }[]>`
+        select d.id, d.last_reading_cm as cm, d.last_reading_at as at
+        from devices d
+        where d.deleted_at is null and d.last_reading_at is not null and ${onlineSql(sql)}
+        order by d.last_reading_at desc, d.id limit 1`;
+      let rainfallTodayMm: number | null = null;
+      if (opts.weatherCacheKey) {
+        const [w] = await sql<{ rain: number | null; fetchedAt: string | null }[]>`
+          select (payload->'today'->>'rainfallMm')::float8 as rain, payload->>'fetchedAt' as "fetchedAt"
+          from weather_cache where cache_key = ${opts.weatherCacheKey}`;
+        if (w?.fetchedAt && jakartaDateKey(Date.parse(w.fetchedAt)) === jakartaDateKey(now.getTime())) rainfallTodayMm = w.rain;
+      }
+      const c = counts!;
+      return {
+        averageDistanceM: c.avgCm == null ? null : +(c.avgCm / 100).toFixed(2),
+        devices: { total: c.total, online: c.online, offline: c.total - c.online },
+        latestReading: latest ? { deviceId: latest.id, distanceCm: Number(latest.cm), timestamp: latest.at.toISOString() } : null,
+        rainfallTodayMm,
+        lastUpdate: now.toISOString(),
+      };
+    },
 
     /** GET /api/devices/:id/readings — downsampled, carried forward, null while offline. */
     async history(id: string, query: unknown, now = new Date()): Promise<History> {

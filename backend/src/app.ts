@@ -13,7 +13,7 @@ import { deviceRoutes } from './modules/devices/routes.js';
 import { readingsRoutes } from './modules/readings/routes.js';
 import { readingsService } from './modules/readings/service.js';
 import { weatherRoutes } from './modules/weather/routes.js';
-import { weatherService, type WeatherConfig } from './modules/weather/service.js';
+import { weatherCacheKey, weatherService, type WeatherConfig } from './modules/weather/service.js';
 import { deviceService, type MqttPublicInfo } from './modules/devices/service.js';
 
 export interface AppDeps extends HealthDeps {
@@ -68,7 +68,9 @@ export async function buildApp({ deps, logger = false }: BuildAppOptions): Promi
       await api.register(healthRoutes(deps));
       if (deps.sql && deps.auth) {
         await api.register(identityRoutes(identityService(deps.sql, deps.auth), deps.auth));
-        await api.register(readingsRoutes(readingsService(deps.sql)));
+        await api.register(
+          readingsRoutes(readingsService(deps.sql, deps.weather ? { weatherCacheKey: weatherCacheKey(deps.weather) } : {})),
+        );
         if (deps.weather) {
           await api.register(weatherRoutes(weatherService(deps.sql, deps.weather, deps.fetch ?? fetch, api.log)));
         }

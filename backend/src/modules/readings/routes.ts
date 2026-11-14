@@ -5,6 +5,7 @@ import type { ReadingsService } from './service.js';
 export const readingsRoutes =
   (service: ReadingsService): FastifyPluginAsync =>
   async (app) => {
+    app.get('/summary', async () => service.summary());
     app.get<{ Params: { id: string } }>('/devices/:id/readings', async (request) =>
       service.history(request.params.id, request.query),
     );
