@@ -10,6 +10,8 @@ import { identityService } from './modules/identity/service.js';
 import type { AuthConfig } from './modules/identity/tokens.js';
 import type { BrokerProvisioner } from './modules/devices/broker/provisioner.js';
 import { deviceRoutes } from './modules/devices/routes.js';
+import { readingsRoutes } from './modules/readings/routes.js';
+import { readingsService } from './modules/readings/service.js';
 import { deviceService, type MqttPublicInfo } from './modules/devices/service.js';
 
 export interface AppDeps extends HealthDeps {
@@ -60,6 +62,7 @@ export async function buildApp({ deps, logger = false }: BuildAppOptions): Promi
       await api.register(healthRoutes(deps));
       if (deps.sql && deps.auth) {
         await api.register(identityRoutes(identityService(deps.sql, deps.auth), deps.auth));
+        await api.register(readingsRoutes(readingsService(deps.sql)));
       }
       if (deps.sql && guards && deps.broker && deps.mqttPublic) {
         const service = deviceService({
