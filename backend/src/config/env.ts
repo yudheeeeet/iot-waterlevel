@@ -23,7 +23,7 @@ export const BaseEnvSchema = z.object({
 });
 
 /** Extra variables needed only by the HTTP api. */
-export const ApiEnvSchema = BaseEnvSchema.extend({
+const ApiBaseSchema = BaseEnvSchema.extend({
   HOST: z.string().default('0.0.0.0'),
   PORT: z.coerce.number().int().min(1).max(65535).default(8080),
   JWT_SECRET: z
@@ -36,8 +36,50 @@ export const ApiEnvSchema = BaseEnvSchema.extend({
   COOKIE_SECURE: bool.optional(),
 });
 
+/**
+ * Broker settings, shared by the api (device accounts) and the worker (ingestion, reconciliation).
+ * MQTT_URL/USERNAME/PASSWORD are needed by the worker always, and by the api only in `mosquitto` mode.
+ */
+const BrokerFields = {
+  BROKER_PROVIDER: z.enum(['mosquitto', 'manual']).default('mosquitto'),
+  MQTT_URL: z
+    .string()
+    .refine((v) => /^mqtts?:\/\//.test(v), 'MQTT_URL harus diawali mqtt:// atau mqtts://')
+    .optional(),
+  MQTT_USERNAME: z.string().min(1).optional(),
+  MQTT_PASSWORD: z
+    .string()
+    .min(1)
+    .refine((v) => !v.includes('GANTI_'), 'MQTT_PASSWORD masih berisi nilai contoh (GANTI_…)')
+    .optional(),
+  /** Broker address shown to firmware authors when a device is created. */
+  MQTT_PUBLIC_HOST: z.string().min(1).default('localhost'),
+  MQTT_PUBLIC_PORT: z.coerce.number().int().min(1).max(65535).default(1883),
+  MQTT_PUBLIC_TLS: bool.default(false),
+};
+
+type BrokerShape = {
+  MQTT_URL?: string | undefined;
+  MQTT_USERNAME?: string | undefined;
+  MQTT_PASSWORD?: string | undefined;
+};
+const requireMqttConnection = (env: BrokerShape, ctx: z.RefinementCtx) => {
+  for (const key of ['MQTT_URL', 'MQTT_USERNAME', 'MQTT_PASSWORD'] as const) {
+    if (!env[key]) ctx.addIssue({ code: 'custom', path: [key], message: `${key} wajib diisi` });
+  }
+};
+
+/** api: MQTT connection required only when the api provisions accounts itself (`mosquitto`). */
+export const ApiEnvSchema = ApiBaseSchema.extend(BrokerFields).superRefine((env, ctx) => {
+  if (env.BROKER_PROVIDER === 'mosquitto') requireMqttConnection(env, ctx);
+});
+
+/** worker: always connects to the broker. */
+export const WorkerEnvSchema = BaseEnvSchema.extend(BrokerFields).superRefine(requireMqttConnection);
+
 export type BaseEnv = z.infer<typeof BaseEnvSchema>;
 export type ApiEnv = z.infer<typeof ApiEnvSchema>;
+export type WorkerEnv = z.infer<typeof WorkerEnvSchema>;
 
 export class EnvError extends Error {
   constructor(public readonly issues: string[]) {
@@ -73,3 +115,5 @@ function load<S extends z.ZodType>(schema: S): z.infer<S> {
 export const loadEnv = (): BaseEnv => load(BaseEnvSchema);
 /** Loads `.env` (if present) and validates everything the HTTP api needs. */
 export const loadApiEnv = (): ApiEnv => load(ApiEnvSchema);
+/** Loads `.env` (if present) and validates everything the worker needs. */
+export const loadWorkerEnv = (): WorkerEnv => load(WorkerEnvSchema);

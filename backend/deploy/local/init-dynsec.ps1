@@ -54,6 +54,8 @@ try {
   Ctrl @('addRoleACL', 'baruna-backend', 'subscribePattern', 'baruna/devices/#', 'allow')
   Ctrl @('addRoleACL', 'baruna-backend', 'subscribePattern', '$CONTROL/dynamic-security/#', 'allow')
   Ctrl @('addRoleACL', 'baruna-backend', 'publishClientSend', '$CONTROL/dynamic-security/#', 'allow')
+  # Balasan Dynamic Security: topic '$...' tidak tercakup default ACL, jadi harus diizinkan eksplisit.
+  Ctrl @('addRoleACL', 'baruna-backend', 'publishClientReceive', '$CONTROL/dynamic-security/#', 'allow')
   Ctrl @('createClient', $backendUser, '-p', $backendPw)
   # Pastikan password sesuai .env walau akun sudah ada sebelumnya.
   Ctrl @('setClientPassword', $backendUser, $backendPw)

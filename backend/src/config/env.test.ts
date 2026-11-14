@@ -1,8 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { ApiEnvSchema, BaseEnvSchema, EnvError, parseEnv } from './env.js';
+import { ApiEnvSchema, BaseEnvSchema, EnvError, WorkerEnvSchema, parseEnv } from './env.js';
 
 const DB = 'postgres://u:p@localhost:5432/db';
 const SECRET = 'x'.repeat(40);
+const MQTT = { MQTT_URL: 'mqtt://127.0.0.1:1884', MQTT_USERNAME: 'baruna-backend', MQTT_PASSWORD: 'secret' };
 
 const messageOf = (fn: () => unknown): string => {
   try {
@@ -16,7 +17,7 @@ const messageOf = (fn: () => unknown): string => {
 
 describe('parseEnv', () => {
   it('applies defaults', () => {
-    const env = parseEnv({ DATABASE_URL: DB, JWT_SECRET: SECRET }, ApiEnvSchema);
+    const env = parseEnv({ DATABASE_URL: DB, JWT_SECRET: SECRET, ...MQTT }, ApiEnvSchema);
     expect(env.PORT).toBe(8080);
     expect(env.NODE_ENV).toBe('development');
     expect(env.ACCESS_TOKEN_TTL_SEC).toBe(900);
@@ -47,6 +48,26 @@ describe('parseEnv', () => {
 
   it('rejects a short JWT secret and parses COOKIE_SECURE', () => {
     expect(messageOf(() => parseEnv({ DATABASE_URL: DB, JWT_SECRET: 'short' }, ApiEnvSchema))).toContain('minimal 32');
-    expect(parseEnv({ DATABASE_URL: DB, JWT_SECRET: SECRET, COOKIE_SECURE: 'true' }, ApiEnvSchema).COOKIE_SECURE).toBe(true);
+    expect(parseEnv({ DATABASE_URL: DB, JWT_SECRET: SECRET, COOKIE_SECURE: 'true', ...MQTT }, ApiEnvSchema).COOKIE_SECURE).toBe(true);
+  });
+
+  it('broker: mosquitto mode needs the MQTT connection, manual mode does not (api)', () => {
+    const msg = messageOf(() => parseEnv({ DATABASE_URL: DB, JWT_SECRET: SECRET }, ApiEnvSchema));
+    expect(msg).toContain('MQTT_URL wajib diisi');
+    expect(msg).toContain('MQTT_PASSWORD wajib diisi');
+    const manual = parseEnv({ DATABASE_URL: DB, JWT_SECRET: SECRET, BROKER_PROVIDER: 'manual' }, ApiEnvSchema);
+    expect(manual.BROKER_PROVIDER).toBe('manual');
+    expect(manual.MQTT_PUBLIC_PORT).toBe(1883);
+    expect(manual.MQTT_PUBLIC_TLS).toBe(false);
+  });
+
+  it('broker: the worker always needs the MQTT connection; URL scheme and placeholders are checked', () => {
+    expect(messageOf(() => parseEnv({ DATABASE_URL: DB, BROKER_PROVIDER: 'manual' }, WorkerEnvSchema))).toContain('MQTT_URL wajib diisi');
+    const msg = messageOf(() =>
+      parseEnv({ DATABASE_URL: DB, ...MQTT, MQTT_URL: 'http://x', MQTT_PASSWORD: 'GANTI_PASSWORD_BACKEND_MQTT' }, WorkerEnvSchema),
+    );
+    expect(msg).toContain('MQTT_URL harus diawali');
+    expect(msg).toContain('MQTT_PASSWORD masih berisi nilai contoh');
+    expect(parseEnv({ DATABASE_URL: DB, ...MQTT, MQTT_PUBLIC_TLS: 'true' }, WorkerEnvSchema).MQTT_PUBLIC_TLS).toBe(true);
   });
 });
