@@ -8,11 +8,19 @@ import { healthRoutes, type HealthDeps } from './modules/health/routes.js';
 import { identityRoutes } from './modules/identity/routes.js';
 import { identityService } from './modules/identity/service.js';
 import type { AuthConfig } from './modules/identity/tokens.js';
+import type { BrokerProvisioner } from './modules/devices/broker/provisioner.js';
+import { deviceRoutes } from './modules/devices/routes.js';
+import { deviceService, type MqttPublicInfo } from './modules/devices/service.js';
 
 export interface AppDeps extends HealthDeps {
   /** Database + auth config. Without them only /api/health is registered (used by unit tests). */
   sql?: Sql;
   auth?: AuthConfig;
+  /** Broker adapter + firmware-facing broker address. Without them device routes are not registered. */
+  broker?: BrokerProvisioner;
+  mqttPublic?: MqttPublicInfo;
+  /** Broker usernames a device id may not take (e.g. the backend account). */
+  reservedDeviceIds?: string[];
 }
 
 export interface BuildAppOptions {
@@ -45,11 +53,22 @@ export async function buildApp({ deps, logger = false }: BuildAppOptions): Promi
 
   await app.register(
     async (api) => {
-      if (deps.auth) api.addHook('onRequest', makeGuards(deps.auth).defaultDeny);
+      const guards = deps.auth ? makeGuards(deps.auth) : undefined;
+      if (guards) api.addHook('onRequest', guards.defaultDeny);
 
       await api.register(healthRoutes(deps));
       if (deps.sql && deps.auth) {
         await api.register(identityRoutes(identityService(deps.sql, deps.auth), deps.auth));
+      }
+      if (deps.sql && guards && deps.broker && deps.mqttPublic) {
+        const service = deviceService({
+          sql: deps.sql,
+          broker: deps.broker,
+          mqttPublic: deps.mqttPublic,
+          reservedIds: ['admin', 'baruna-backend', ...(deps.reservedDeviceIds ?? [])],
+          log: api.log,
+        });
+        await api.register(deviceRoutes(service, guards.requireRole('admin')));
       }
     },
     { prefix: '/api' },
