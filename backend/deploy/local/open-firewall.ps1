@@ -10,7 +10,7 @@ $ErrorActionPreference = 'Stop'
 $isAdmin = ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole(
   [Security.Principal.WindowsBuiltInRole]::Administrator)
 if (-not $isAdmin) {
-  # Buka ulang script ini sebagai Administrator (muncul jendela izin Windows / UAC → klik Yes).
+  # Buka ulang script ini sebagai Administrator (muncul jendela izin Windows / UAC -> klik Yes).
   Write-Host 'Meminta izin Administrator... klik "Yes" pada jendela Windows yang muncul.'
   try {
     Start-Process powershell -Verb RunAs -ArgumentList @('-NoExit', '-ExecutionPolicy', 'Bypass', '-File', "`"$PSCommandPath`"")

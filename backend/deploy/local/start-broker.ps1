@@ -1,6 +1,6 @@
 # Menjalankan Mosquitto lokal proyek (port 1884).
-#   npm run broker:local  → hanya dari laptop ini (127.0.0.1)
-#   npm run broker:lan    → juga dari perangkat lain di WiFi yang sama (uji ESP32)
+#   npm run broker:local  -> hanya dari laptop ini (127.0.0.1)
+#   npm run broker:lan    -> juga dari perangkat lain di WiFi yang sama (uji ESP32)
 param([switch]$Lan)
 $ErrorActionPreference = 'Stop'
 Set-Location (Join-Path $PSScriptRoot '..\..')
