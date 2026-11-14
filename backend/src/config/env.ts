@@ -75,7 +75,11 @@ export const ApiEnvSchema = ApiBaseSchema.extend(BrokerFields).superRefine((env,
 });
 
 /** worker: always connects to the broker. */
-export const WorkerEnvSchema = BaseEnvSchema.extend(BrokerFields).superRefine(requireMqttConnection);
+export const WorkerEnvSchema = BaseEnvSchema.extend({
+  ...BrokerFields,
+  /** MQTT client id of the persistent session; run at most one worker per id. */
+  WORKER_ID: z.string().regex(/^[A-Za-z0-9_-]{1,64}$/).default('baruna-worker'),
+}).superRefine(requireMqttConnection);
 
 export type BaseEnv = z.infer<typeof BaseEnvSchema>;
 export type ApiEnv = z.infer<typeof ApiEnvSchema>;

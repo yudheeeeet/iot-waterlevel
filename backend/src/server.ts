@@ -3,6 +3,7 @@ import { createSql, pingDb } from './db/client.js';
 import { authConfigFromEnv, buildApp } from './app.js';
 import { loggerOptions } from './shared/logger.js';
 import { createBroker } from './modules/devices/broker/index.js';
+import { workerState } from './modules/health/workerStatus.js';
 
 const env = loadApiEnv();
 const sql = createSql(env.DATABASE_URL);
@@ -11,6 +12,7 @@ const broker = createBroker(env, 'baruna-api');
 const app = await buildApp({
   deps: {
     checkDb: () => pingDb(sql),
+    checkWorker: () => workerState(sql),
     sql,
     auth: authConfigFromEnv(env),
     broker,

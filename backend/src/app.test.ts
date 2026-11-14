@@ -19,6 +19,16 @@ describe('GET /api/health', () => {
     expect(res.statusCode).toBe(503);
     expect(res.json()).toMatchObject({ status: 'degraded', db: 'down' });
   });
+
+  it('reports the worker from its heartbeat; a stopped worker is degraded but still 200', async () => {
+    const withWorker = (state: 'up' | 'down') =>
+      buildApp({ deps: { checkDb: async () => true, checkWorker: async () => state } });
+    const up = await (await withWorker('up')).inject({ method: 'GET', url: '/api/health' });
+    expect(up.json()).toMatchObject({ status: 'ok', worker: 'up' });
+    const down = await (await withWorker('down')).inject({ method: 'GET', url: '/api/health' });
+    expect(down.statusCode).toBe(200);
+    expect(down.json()).toMatchObject({ status: 'degraded', db: 'up', worker: 'down' });
+  });
 });
 
 describe('error format', () => {
