@@ -3,3 +3,6 @@ dist
 .env
 .env.local
 *.log
+
+# Firmware: konfigurasi berisi password WiFi & token device
+firmware/**/config.h
