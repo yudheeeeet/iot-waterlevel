@@ -16,15 +16,25 @@ $pg = Get-Service 'postgresql-x64-18' -ErrorAction SilentlyContinue
 if ($pg -and $pg.Status -ne 'Running') { Write-Host 'PERINGATAN: service PostgreSQL tidak berjalan (postgresql-x64-18).' -ForegroundColor Yellow }
 
 Write-Host 'Menyalakan:'
-if (Get-NetTCPConnection -State Listen -LocalPort 1884 -ErrorAction SilentlyContinue) {
+if ([bool](Get-NetTCPConnection -State Listen -LocalPort 1884 -ErrorAction SilentlyContinue)) {
   Write-Host '  - Broker sudah berjalan di port 1884 (dilewati)'
 } else {
   Start-Window 'Baruna - Broker (1884)' $backend 'npm run broker:lan'
   Start-Sleep -Seconds 2
 }
-Start-Window 'Baruna - API (8080)' $backend 'npm run dev'
-Start-Window 'Baruna - Worker' $backend 'npm run worker'
-Start-Window 'Baruna - Dashboard (5173)' $root 'npm run dev:demo'
+function Listening($port) { [bool](Get-NetTCPConnection -State Listen -LocalPort $port -ErrorAction SilentlyContinue) }
+
+if (Listening 8080) { Write-Host '  - API sudah berjalan di port 8080 (dilewati)' }
+else { Start-Window 'Baruna - API (8080)' $backend 'npm run dev' }
+
+# Only one worker may run (fixed MQTT client id); detect it from its command line.
+$worker = Get-CimInstance Win32_Process -Filter "Name='node.exe'" -ErrorAction SilentlyContinue |
+  Where-Object { $_.CommandLine -match 'src[\/]worker\.ts' }
+if ($worker) { Write-Host '  - Worker sudah berjalan (dilewati)' }
+else { Start-Window 'Baruna - Worker' $backend 'npm run worker' }
+
+if (Listening 5173) { Write-Host '  - Dashboard sudah berjalan di port 5173 (dilewati)' }
+else { Start-Window 'Baruna - Dashboard (5173)' $root 'npm run dev:demo' }
 
 $ips = @(Get-NetIPAddress -AddressFamily IPv4 -ErrorAction SilentlyContinue |
   Where-Object { $_.IPAddress -notmatch '^(127|169\.254)\.' -and $_.PrefixOrigin -ne 'WellKnown' } |
