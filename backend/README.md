@@ -72,7 +72,9 @@ Isi `MQTT_PUBLIC_HOST` di `.env` dengan IP yang ditampilkan. IP bisa berubah bil
 npm run dev            # api
 npm run worker         # worker (terminal lain)
 ```
-Worker menyamakan akun device di Mosquitto dengan database setiap kali tersambung ke broker:
+Worker menerima data dari `baruna/devices/+/readings`, menyimpannya sesuai kebijakan penyimpanan (PRD §3.3),
+mencatat event online/offline setiap 30 detik, dan menulis heartbeat yang ditampilkan `GET /api/health` (`worker: up/down`).
+Worker juga menyamakan akun device di Mosquitto dengan database setiap kali tersambung ke broker:
 akun tanpa device dihapus, device tanpa akun ditandai `needs_token_rotation` (perbaiki dengan rotasi token).
 
 ## Device & broker
@@ -103,6 +105,8 @@ akun tanpa device dihapus, device tanpa akun ditandai `needs_token_rotation` (pe
 | `npm run user:reset-password -- --email a@b.c` | Reset password + cabut semua sesi |
 | `npm run broker:init` / `broker:local` | Setup & menjalankan Mosquitto lokal (hanya dari laptop) |
 | `npm run broker:lan` | Mosquitto lokal yang bisa diakses dari WiFi yang sama (uji ESP32) |
+| `npm run simulate -- --setup 3` | Membuat device simulasi SIM-001..003 (+ token di `.sim-devices.json`, tidak di-commit) |
+| `npm run simulate -- --interval 2 --mode noise` | Mengirim data seperti device asli. Mode `constant`/`noise`/`rise`/`fall`; opsi `--duplicate`, `--batch N`, `--skew 180`, `--count N`, `--device ID:TOKEN` |
 | `npm run broker:ping` | Uji koneksi broker di `.env` (connect, subscribe, publish → terima, latency) |
 | `npm run broker:ping -- --env .env.hivemq` | Sama, untuk broker lain (mis. HiveMQ Cloud) tanpa mengubah `.env` |
 

@@ -119,11 +119,11 @@ T2 Docker + akun ┘          │                                               
 - [ ] Viewer → 403 pada endpoint ubah device
 
 ### Hari 3: Data Masuk + Hardware
-- [ ] T8: Simulator device MQTT
-- [ ] T9: Logika ingestion murni + unit test
-- [ ] T10: Worker: consumer MQTT, penyimpanan, heartbeat
-- [ ] T11: Online/offline (dihitung saat dibaca + event di worker)
-- [ ] T12: Firmware ESP32 + HC-SR04 → HiveMQ, uji dengan hardware Anda
+- [x] T8: Simulator device MQTT
+- [x] T9: Logika ingestion murni + unit test
+- [x] T10: Worker: consumer MQTT, penyimpanan, heartbeat
+- [x] T11: Online/offline (dihitung saat dibaca + event di worker)
+- [ ] T12: Firmware ESP32 + HC-SR04 → Mosquitto laptop (TLS/HiveMQ opsional) — kode selesai & lulus compile, menunggu uji hardware Gilang
 
 ### Checkpoint Hari 3 (audit)
 - [ ] Simulator → data tersimpan; duplikat QoS 1 tidak menambah baris; nilai konstan ≤ 5 baris/jam

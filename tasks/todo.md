@@ -164,12 +164,12 @@ Pilihan lewat `BROKER_PROVIDER`.
 **Description:** `npm run simulate -- --devices 3 --interval 60 --noise 0.5`, membaca `deviceId:token` dari file/env, connect ke `MQTT_URL` (lokal atau HiveMQ). Mode: `constant`, `noise` (±cm), `rise` (naik 1 cm/menit), `--duplicate` (tiap pesan 2×), `--batch` (kirim tertunda dalam batch), `--skew 180` (jam maju 3 menit).
 
 **Acceptance criteria:**
-- [ ] Publish `{ ts, level }` QoS 1 ke topic yang benar memakai token device, ke Mosquitto lokal maupun HiveMQ (TLS)
-- [ ] Setiap mode bisa dipilih lewat argumen
-- [ ] Interval bisa dipercepat (`--interval 2`) untuk uji cepat
+- [x] Publish `{ ts, level }` QoS 1 ke topic yang benar memakai token device, ke Mosquitto lokal maupun HiveMQ (TLS)
+- [x] Setiap mode bisa dipilih lewat argumen
+- [x] Interval bisa dipercepat (`--interval 2`) untuk uji cepat
 
 **Verification:**
-- [ ] Manual: `mosquitto_sub -t 'baruna/devices/#' -v` dengan akun backend menampilkan pesan simulator
+- [x] Manual: `mosquitto_sub -t 'baruna/devices/#' -v` dengan akun backend menampilkan pesan simulator
 
 **Dependencies:** T6
 **Files likely touched:** `backend/scripts/simulate-device.ts`
@@ -185,12 +185,12 @@ Pilihan lewat `BROKER_PROVIDER`.
 - `computeStatus`: threshold jarak.
 
 **Acceptance criteria:**
-- [ ] Semua cabang `shouldStore` & `computeStatus` tercakup test (100% branch)
-- [ ] Payload invalid menghasilkan error terstruktur, bukan exception yang tidak tertangkap
-- [ ] Nilai sangat kecil (air dekat sensor) diterima, tidak ditolak
+- [x] Semua cabang `shouldStore` & `computeStatus` tercakup test (100% branch)
+- [x] Payload invalid menghasilkan error terstruktur, bukan exception yang tidak tertangkap
+- [x] Nilai sangat kecil (air dekat sensor) diterima, tidak ditolak
 
 **Verification:**
-- [ ] Tests pass: `npm run test -- ingestion --coverage`
+- [x] Tests pass: `npm run test -- ingestion --coverage`
 
 **Dependencies:** T1
 **Files likely touched:** `backend/src/modules/ingestion/payload.ts`, `.../ingestion/storagePolicy.ts`, `.../ingestion/status.ts`, `.../ingestion/*.test.ts`
@@ -202,13 +202,13 @@ Pilihan lewat `BROKER_PROVIDER`.
 **Description:** Worker subscribe `$share/backend/baruna/devices/+/readings` (QoS 1, `clean=false`, client id tetap) ke `MQTT_URL` (lokal/HiveMQ TLS). Ambil deviceId dari topic dan abaikan device yang tidak terdaftar/nonaktif. Jalankan logika T9; `INSERT … ON CONFLICT DO NOTHING` bila `shouldStore`; selalu update `last_seen_at`, `last_reading_*`, `last_status` (bila `ts` lebih baru). Reconnect dengan backoff. Heartbeat ke `worker_status` tiap 30 detik; `/api/health` menampilkan `worker: up/down` dari heartbeat. Counter diterima/disimpan/ditolak di log tiap 5 menit.
 
 **Acceptance criteria:**
-- [ ] Simulator `--duplicate` → jumlah baris sama dengan tanpa duplikat; `constant` → ≤ 5 baris/jam; `noise` → setiap perubahan tersimpan
-- [ ] Pesan dari deviceId tidak terdaftar atau device nonaktif → diabaikan + log `warn`
-- [ ] Broker di-restart / jaringan putus → worker reconnect sendiri; `/api/health` menunjukkan `worker: "down"` saat worker dimatikan > 90 detik
+- [x] Simulator `--duplicate` → jumlah baris sama dengan tanpa duplikat; `constant` → ≤ 5 baris/jam; `noise` → setiap perubahan tersimpan
+- [x] Pesan dari deviceId tidak terdaftar atau device nonaktif → diabaikan + log `warn`
+- [x] Broker di-restart / jaringan putus → worker reconnect sendiri; `/api/health` menunjukkan `worker: "down"` saat worker dimatikan > 90 detik
 
 **Verification:**
-- [ ] Tests pass: `npm run test -- ingestion`
-- [ ] Manual: simulator 3 device → `SELECT device_id, count(*) FROM readings GROUP BY 1`
+- [x] Tests pass: `npm run test -- ingestion`
+- [x] Manual: simulator 3 device → `SELECT device_id, count(*) FROM readings GROUP BY 1`
 
 **Dependencies:** T8, T9
 **Files likely touched:** `backend/src/modules/ingestion/mqttConsumer.ts`, `.../ingestion/service.ts`, `.../ingestion/repo.ts`, `backend/src/worker.ts`, `backend/src/modules/health/routes.ts`
@@ -220,13 +220,13 @@ Pilihan lewat `BROKER_PROVIDER`.
 **Description:** Fungsi murni `offlineRule` (`max(300, interval × 3)`, override per device) dipakai di query API (status saat dibaca) dan di job worker tiap 30 detik yang mencatat transisi ke `device_status_events` (`timeout` / `reading`).
 
 **Acceptance criteria:**
-- [ ] Simulator dihentikan → `GET /api/devices` menampilkan offline tepat setelah 5 menit, **walau worker juga dimatikan**
-- [ ] Event `timeout` tercatat ≤ 5,5 menit (worker menyala); pesan pertama setelahnya → online + event `reading`
-- [ ] Device yang belum pernah kirim data = offline
+- [x] Simulator dihentikan → `GET /api/devices` menampilkan offline tepat setelah 5 menit, **walau worker juga dimatikan**
+- [x] Event `timeout` tercatat ≤ 5,5 menit (worker menyala); pesan pertama setelahnya → online + event `reading`
+- [x] Device yang belum pernah kirim data = offline
 
 **Verification:**
-- [ ] Tests pass: `npm run test -- presence`
-- [ ] Manual: uji dengan `OFFLINE_MIN_SEC=20` agar cepat
+- [x] Tests pass: `npm run test -- presence`
+- [x] Manual: uji dengan override per device `offlineAfterSec: 30` (PATCH) agar cepat — env `OFFLINE_MIN_SEC` tidak dibuat
 
 **Dependencies:** T10
 **Files likely touched:** `backend/src/modules/presence/offlineRule.ts`, `.../presence/presenceJob.ts`, `.../presence/offlineRule.test.ts`, `backend/src/modules/devices/repo.ts`
