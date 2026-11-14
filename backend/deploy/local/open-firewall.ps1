@@ -8,7 +8,17 @@ $ErrorActionPreference = 'Stop'
 
 $isAdmin = ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole(
   [Security.Principal.WindowsBuiltInRole]::Administrator)
-if (-not $isAdmin) { throw 'Jalankan PowerShell sebagai Administrator.' }
+if (-not $isAdmin) {
+  # Buka ulang script ini sebagai Administrator (muncul jendela izin Windows / UAC → klik Yes).
+  Write-Host 'Meminta izin Administrator... klik "Yes" pada jendela Windows yang muncul.'
+  try {
+    Start-Process powershell -Verb RunAs -ArgumentList @('-NoExit', '-ExecutionPolicy', 'Bypass', '-File', "`"$PSCommandPath`"")
+  } catch {
+    throw 'Izin Administrator ditolak. Jalankan ulang lalu klik "Yes", atau buka PowerShell dengan "Run as administrator".'
+  }
+  Write-Host 'Lanjutkan di jendela PowerShell Administrator yang baru terbuka.'
+  return
+}
 
 $ruleName = 'Baruna Mosquitto 1884 (Private)'
 if (-not (Get-NetFirewallRule -DisplayName $ruleName -ErrorAction SilentlyContinue)) {
