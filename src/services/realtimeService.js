@@ -24,6 +24,11 @@ function wsUrl() {
  * @returns {() => void} unsubscribe
  */
 export function subscribeRealtime(onMessage, onState = () => {}) {
+  // MVP: no WebSocket (VITE_REALTIME=off). The dashboard polls REST instead; no connection attempt.
+  if (!config.realtime) {
+    onState('polling');
+    return () => {};
+  }
   if (config.useMock) {
     onState('open');
     const stop = mockSubscribe(onMessage);

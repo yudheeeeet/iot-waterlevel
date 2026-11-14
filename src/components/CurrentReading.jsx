@@ -23,7 +23,11 @@ function arc(fromCm, toCm) {
 }
 
 export default function CurrentReading({ device }) {
-  const { critical, warning, max } = config.thresholds;
+  // Per-device thresholds from the backend; the config values are the fallback (mock).
+  const critical = device?.thresholdCriticalCm ?? config.thresholds.critical;
+  const warning = device?.thresholdWarningCm ?? config.thresholds.warning;
+  const { max } = config.thresholds;
+  const intervalSec = device?.reportingIntervalSec ?? config.sampleIntervalSec;
   const reading = device?.lastReading;
   const cm = reading?.distanceCm;
   const status = displayStatus(device);
@@ -34,8 +38,14 @@ export default function CurrentReading({ device }) {
   return (
     <div className="card gauge-card">
       <div className="gauge-card__head">
-        <h2 className="section-title">Current reading</h2>
-        {config.useMock ? <AccentChip>Simulated live</AccentChip> : <AccentChip pulse>Live</AccentChip>}
+        <h2 className="section-title">Last reading</h2>
+        {config.useMock ? (
+          <AccentChip>Simulated live</AccentChip>
+        ) : config.realtime ? (
+          <AccentChip pulse>Live</AccentChip>
+        ) : (
+          <AccentChip>Auto-refresh {Math.round(config.pollIntervalMs / 1000)} s</AccentChip>
+        )}
       </div>
 
       <div className="gauge-card__device">
@@ -86,8 +96,9 @@ export default function CurrentReading({ device }) {
       <p className="note">
         <Info size={14} strokeWidth={1.75} />
         <span>
-          Illustrative thresholds: a smaller gap means a higher water surface.
-          {reading && ` Last reading ${formatTime(reading.timestamp, { seconds: true })} WIB · every ${config.sampleIntervalSec} sec.`}
+          {device?.thresholdWarningCm != null ? 'Device thresholds' : 'Illustrative thresholds'}: a smaller gap means a higher water surface.
+          {reading && ` Last reading ${formatTime(reading.timestamp, { seconds: true })} WIB · every ${intervalSec} sec.`}
+          {device && !reading && ' No readings received yet.'}
           {device && !device.online && ' Device is currently offline.'}
         </span>
       </p>

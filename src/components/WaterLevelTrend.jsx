@@ -74,8 +74,8 @@ export default function WaterLevelTrend({ devices, selectedId, onSelectDevice, l
   }, [lastReading, selectedId, range, custom, rangeDef]);
 
   const yDomain = useMemo(() => {
-    if (!data.length) return [0, 5];
-    const vals = data.map((d) => d.m);
+    const vals = data.map((d) => d.m).filter((v) => v != null); // null = device offline (gap)
+    if (!vals.length) return [0, 5];
     const lo = Math.max(0, Math.floor((Math.min(...vals) - 0.1) * 2) / 2);
     const hi = Math.ceil((Math.max(...vals) + 0.1) * 2) / 2;
     return [lo, Math.max(hi, lo + 1)];
@@ -92,7 +92,9 @@ export default function WaterLevelTrend({ devices, selectedId, onSelectDevice, l
     return Array.from({ length: n }, (_, i) => win.from + ((win.to - win.from) * i) / (n - 1));
   }, [win]);
 
-  const latest = data[data.length - 1];
+  // Latest point with a value (offline buckets are null and drawn as gaps).
+  const latest = [...data].reverse().find((p) => p.m != null);
+  const hasValues = !!latest;
 
   const doExport = useCallback(async (format) => {
     if (!selectedId) return;
@@ -135,8 +137,8 @@ export default function WaterLevelTrend({ devices, selectedId, onSelectDevice, l
           </label>
           <span className="vr" />
           <span className="muted">Export Data</span>
-          <Button onClick={() => doExport('csv')} disabled={!!exporting || !data.length}>{exporting === 'csv' ? 'Exporting…' : 'Export CSV'}</Button>
-          <Button onClick={() => doExport('xlsx')} disabled={!!exporting || !data.length}>{exporting === 'xlsx' ? 'Exporting…' : 'Export XLS'}</Button>
+          <Button onClick={() => doExport('csv')} disabled={!!exporting || !hasValues}>{exporting === 'csv' ? 'Exporting…' : 'Export CSV'}</Button>
+          <Button onClick={() => doExport('xlsx')} disabled={!!exporting || !hasValues}>{exporting === 'xlsx' ? 'Exporting…' : 'Export XLSX'}</Button>
         </div>
       </div>
 
@@ -185,7 +187,7 @@ export default function WaterLevelTrend({ devices, selectedId, onSelectDevice, l
       <div className="trend__chart">
         <span className="trend__ytitle">Distance (m)</span>
         {error && <div className="chart-overlay chart-overlay--error">{error}</div>}
-        {!error && !loading && !data.length && <div className="chart-overlay">No readings in this period.</div>}
+        {!error && !loading && !hasValues && <div className="chart-overlay">No readings in this period.</div>}
         {loading && !data.length && <div className="chart-overlay">Loading readings…</div>}
         <ResponsiveContainer width="100%" height={250}>
           <AreaChart data={data} margin={{ top: 12, right: 32, bottom: 0, left: 0 }}>
@@ -245,14 +247,14 @@ function TrendTooltip({ active, payload }) {
   return (
     <div className="trend-tooltip">
       <span>{formatDate(p.t)} · {formatTime(p.t)} WIB</span>
-      <strong>{p.cm} cm / {p.m.toFixed(2)} m</strong>
+      <strong>{p.m == null ? 'Offline · no data' : `${p.cm} cm / ${p.m.toFixed(2)} m`}</strong>
     </div>
   );
 }
 
 const toPoint = (r) => {
   const t = new Date(r.timestamp).getTime();
-  return { t, cm: r.distanceCm, m: r.distanceCm / 100 };
+  return { t, cm: r.distanceCm, m: r.distanceCm == null ? null : r.distanceCm / 100 };
 };
 
 function describeWindow(from, to) {

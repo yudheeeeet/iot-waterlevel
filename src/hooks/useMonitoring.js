@@ -61,11 +61,23 @@ export function useMonitoring() {
     return unsubscribe;
   }, []);
 
-  // Fallback polling of the summary (keeps cards fresh if the socket is down,
-  // and lets the backend correct anything derived on the client).
+  // Polling every VITE_POLL_INTERVAL_MS: devices + summary (MVP has no WebSocket; with a socket this
+  // still corrects anything derived on the client). New last readings are forwarded to the chart.
   useEffect(() => {
     const t = setInterval(async () => {
-      try { setSummary(await monitoringService.getSummary()); } catch { /* keep last value */ }
+      try {
+        const [devs, sum] = await Promise.all([monitoringService.getDevices(), monitoringService.getSummary()]);
+        setDevices((prev) => {
+          const before = new Map(prev.map((d) => [d.id, d.lastReading?.timestamp]));
+          const fresh = devs.filter((d) => d.lastReading && d.lastReading.timestamp !== before.get(d.id));
+          const sel = fresh.find((d) => d.id === selectedRef.current) || fresh[0];
+          if (sel) setLastReading({ deviceId: sel.id, ...sel.lastReading, status: sel.status, online: sel.online });
+          return devs;
+        });
+        setSummary(sum);
+        setLastUpdate(sum?.lastUpdate || new Date().toISOString());
+        setError(null);
+      } catch { /* keep last values; the next poll retries */ }
     }, config.pollIntervalMs);
     return () => clearInterval(t);
   }, []);
@@ -84,16 +96,23 @@ export function useMonitoring() {
   }, [devices, summary]);
 
   // ── device CRUD ───────────────────────────────────────────────
+  // create / rotate return the one-time token + MQTT info; only the device part goes into the list.
   const addDevice = useCallback(async (input) => {
     const created = await monitoringService.createDevice(input);
-    setDevices((list) => [...list, created]);
+    setDevices((list) => [...list, stripIssued(created)]);
     setSelectedId(created.id);
     return created;
   }, []);
 
+  const rotateToken = useCallback(async (id) => {
+    const issued = await monitoringService.rotateToken(id);
+    setDevices((list) => list.map((d) => (d.id === id ? { ...d, ...stripIssued(issued) } : d)));
+    return issued;
+  }, []);
+
   const updateDevice = useCallback(async (id, patch) => {
     const updated = await monitoringService.updateDevice(id, patch);
-    setDevices((list) => list.map((d) => (d.id === id ? { ...d, ...updated } : d)));
+    setDevices((list) => list.map((d) => (d.id === id ? { ...d, ...stripIssued(updated) } : d)));
     return updated;
   }, []);
 
@@ -111,8 +130,14 @@ export function useMonitoring() {
   return {
     devices, summary: liveSummary, selectedId, selectedDevice, setSelectedId,
     loading, error, reload: load, realtimeState, lastReading, lastUpdate,
-    addDevice, updateDevice, removeDevice,
+    addDevice, updateDevice, removeDevice, rotateToken,
   };
+}
+
+/** Device fields only (drops token, mqtt, brokerSetup, brokerError). */
+function stripIssued(d) {
+  const { token: _t, mqtt: _m, brokerSetup: _s, brokerError: _e, ...device } = d;
+  return device;
 }
 
 function pickDefault(devices) {

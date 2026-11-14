@@ -377,3 +377,18 @@ button.sys-header__avatar { color: #fff; cursor: pointer; }
 .user-menu strong { font-size: var(--fs-body2); }
 .user-menu__role { align-self: flex-start; margin: 4px 0 8px; padding: 2px 8px; border-radius: 999px; background: var(--color-surface-subtle); font-weight: 600; }
 .user-menu__logout { display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
+
+/* ── Device credentials (token shown once) ─────────────────── */
+.creds { display: flex; flex-direction: column; gap: 12px; font-size: var(--fs-caption); }
+.creds__warning, .creds__error, .creds__ok { display: flex; gap: 8px; align-items: flex-start; margin: 0; padding: 10px; border-radius: var(--radius-sm); }
+.creds__warning { background: var(--warning-50); color: var(--warning-600); }
+.creds__error { background: var(--error-50); color: var(--error-600); }
+.creds__ok { background: var(--success-50); color: var(--success-600); }
+.creds__row { display: flex; flex-direction: column; gap: 4px; }
+.creds__value { display: flex; align-items: center; gap: 6px; }
+.creds__value code { flex: 1; padding: 6px 8px; border: 1px solid var(--color-border); border-radius: var(--radius-sm); background: var(--color-surface-subtle); overflow-wrap: anywhere; user-select: all; }
+.creds__mono { font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-size: 12px; }
+.creds__setup { display: flex; flex-direction: column; gap: 8px; padding: 10px; border: 1px solid var(--color-border); border-radius: var(--radius-sm); }
+.creds__setup ol { margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 4px; }
+.modal:has(.creds) { width: min(520px, 100%); }
+.dm-popup__broker { margin: 6px 0 0; color: var(--warning-600); font-size: var(--fs-caption); }

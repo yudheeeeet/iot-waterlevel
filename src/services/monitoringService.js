@@ -21,6 +21,10 @@ export const monitoringService = {
   updateDevice: (id, patch) =>
     useMock ? mockApi.updateDevice(id, patch) : request(`/api/devices/${encodeURIComponent(id)}`, { method: 'PATCH', body: patch }),
 
+  /** POST /api/devices/:id/token/rotate → Device + { token, mqtt, brokerSetup? } (token shown once) */
+  rotateToken: (id) =>
+    useMock ? mockApi.rotateToken(id) : request(`/api/devices/${encodeURIComponent(id)}/token/rotate`, { method: 'POST' }),
+
   /** DELETE /api/devices/:id → 204 */
   deleteDevice: (id) =>
     useMock ? mockApi.deleteDevice(id) : request(`/api/devices/${encodeURIComponent(id)}`, { method: 'DELETE' }),

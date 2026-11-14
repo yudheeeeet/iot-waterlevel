@@ -50,6 +50,8 @@ function Dashboard({ auth }) {
             onAdd={m.addDevice}
             onUpdate={m.updateDevice}
             onRemove={m.removeDevice}
+            onRotate={m.rotateToken}
+            canEdit={auth.isAdmin}
           />
           <CurrentReading device={m.selectedDevice} />
         </div>

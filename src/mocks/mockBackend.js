@@ -98,6 +98,16 @@ export const mockApi = {
     return toPublic(d);
   },
 
+  async rotateToken(id) {
+    await delay();
+    const d = find(id);
+    return {
+      ...toPublic(d),
+      token: `bwn_mock_${Math.random().toString(36).slice(2, 12)}`,
+      mqtt: { host: 'localhost', port: 1883, tls: false, topic: `baruna/devices/${id}/readings`, username: id },
+    };
+  },
+
   async deleteDevice(id) {
     await delay();
     find(id);
