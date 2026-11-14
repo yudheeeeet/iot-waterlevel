@@ -36,7 +36,7 @@ export function createIngestion(sql: Sql, log: Log, { retries = 3, retryBaseMs =
     counters.messages++;
     if (r.outcome === 'ignored') {
       counters.ignored++;
-      log.warn({ topic: r.deviceId ?? undefined, deviceId: r.deviceId, reason: r.reason }, 'message ignored');
+      log.warn({ deviceId: r.deviceId, reason: r.reason }, 'message ignored');
     } else if (r.outcome === 'rejected') {
       counters.rejected++;
       log.warn({ deviceId: r.deviceId, reason: r.reason, detail: r.message }, 'message rejected');
