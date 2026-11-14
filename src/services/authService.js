@@ -28,12 +28,20 @@ export const authService = {
   },
 
   async login(email, password) {
-    const res = await fetch(url('/api/auth/login'), {
-      method: 'POST',
-      credentials: 'same-origin',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password }),
-    });
+    let res;
+    try {
+      res = await fetch(url('/api/auth/login'), {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      });
+    } catch {
+      throw new Error('Cannot reach the server. Check that the dashboard and the backend API are running.');
+    }
+    if (res.status >= 502 || (res.status === 500 && !res.headers.get('content-type')?.includes('json'))) {
+      throw new Error('The backend API is not responding. Check that it is running (backend: npm run dev).');
+    }
     const body = await res.json().catch(() => null);
     if (!res.ok) {
       const err = new Error(body?.error?.message || `Login failed (${res.status})`);
