@@ -1,4 +1,5 @@
-# Membuka port 1884 (Mosquitto proyek) untuk jaringan PRIVATE saja, agar ESP32 di WiFi yang sama bisa terhubung.
+# Membuka port 1884 (Mosquitto proyek) dan 5173 (dashboard demo) untuk jaringan PRIVATE saja,
+# agar ESP32 dan HP/laptop lain di WiFi yang sama bisa terhubung.
 # Jalankan SEKALI sebagai Administrator, dari folder backend/:
 #   powershell -ExecutionPolicy Bypass -File deploy\local\open-firewall.ps1
 #
@@ -20,12 +21,14 @@ if (-not $isAdmin) {
   return
 }
 
-$ruleName = 'Baruna Mosquitto 1884 (Private)'
-if (-not (Get-NetFirewallRule -DisplayName $ruleName -ErrorAction SilentlyContinue)) {
-  New-NetFirewallRule -DisplayName $ruleName -Direction Inbound -Protocol TCP -LocalPort 1884 -Action Allow -Profile Private | Out-Null
-  Write-Host "Firewall: aturan '$ruleName' dibuat (TCP 1884, hanya jaringan Private)."
-} else {
-  Write-Host "Firewall: aturan '$ruleName' sudah ada."
+# 1884 = broker untuk ESP32; 5173 = dashboard demo (npm run dev:demo) untuk dibuka dari HP/laptop lain.
+foreach ($r in @(@{ Name = 'Baruna Mosquitto 1884 (Private)'; Port = 1884 }, @{ Name = 'Baruna Dashboard 5173 (Private)'; Port = 5173 })) {
+  if (-not (Get-NetFirewallRule -DisplayName $r.Name -ErrorAction SilentlyContinue)) {
+    New-NetFirewallRule -DisplayName $r.Name -Direction Inbound -Protocol TCP -LocalPort $r.Port -Action Allow -Profile Private | Out-Null
+    Write-Host "Firewall: aturan '$($r.Name)' dibuat (TCP $($r.Port), hanya jaringan Private)."
+  } else {
+    Write-Host "Firewall: aturan '$($r.Name)' sudah ada."
+  }
 }
 
 foreach ($p in Get-NetConnectionProfile) {

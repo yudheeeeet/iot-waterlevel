@@ -142,10 +142,10 @@ T2 Docker + akun ┘          │                                               
 - [ ] DNS domain siap diarahkan ke Vercel
 
 ### Hari 5: Integrasi, Deploy, Demo
-- [ ] T17: Frontend: login + Authorization + refresh otomatis
-- [ ] T18: Frontend: polling devices, matikan WebSocket, "Last Reading", tampilan token, UI sesuai role
-- [ ] T19: Deploy demo (Vercel api + frontend, Supabase, HiveMQ, cron keep-alive, domain)
-- [ ] T20: Panduan integrasi device client + runbook demo
+- [x] T17: Frontend: login + Authorization + refresh otomatis — kode selesai, uji browser di akhir
+- [x] T18: Frontend: polling devices, matikan WebSocket, "Last Reading", tampilan token, UI sesuai role — kode selesai, uji browser di akhir
+- [ ] T19: Deploy demo (Vercel api + frontend, Supabase, HiveMQ, cron keep-alive, domain) — DITUNDA atas keputusan Gilang (demo lokal dulu); konfigurasi Vercel sudah disiapkan
+- [x] T20: Panduan integrasi device client + runbook demo — runbook untuk demo lokal
 
 ### Checkpoint Akhir (audit = PRD §14 DoD MVP)
 - [ ] Kriteria DoD MVP 1–11 terpenuhi
