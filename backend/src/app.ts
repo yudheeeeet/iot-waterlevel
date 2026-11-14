@@ -12,6 +12,8 @@ import type { BrokerProvisioner } from './modules/devices/broker/provisioner.js'
 import { deviceRoutes } from './modules/devices/routes.js';
 import { readingsRoutes } from './modules/readings/routes.js';
 import { readingsService } from './modules/readings/service.js';
+import { weatherRoutes } from './modules/weather/routes.js';
+import { weatherService, type WeatherConfig } from './modules/weather/service.js';
 import { deviceService, type MqttPublicInfo } from './modules/devices/service.js';
 
 export interface AppDeps extends HealthDeps {
@@ -23,6 +25,10 @@ export interface AppDeps extends HealthDeps {
   mqttPublic?: MqttPublicInfo;
   /** Broker usernames a device id may not take (e.g. the backend account). */
   reservedDeviceIds?: string[];
+  /** Weather location + sources. Without it /api/weather is not registered. */
+  weather?: WeatherConfig;
+  /** fetch used for BMKG / Open-Meteo (tests inject a fake). */
+  fetch?: typeof fetch;
 }
 
 export interface BuildAppOptions {
@@ -63,6 +69,9 @@ export async function buildApp({ deps, logger = false }: BuildAppOptions): Promi
       if (deps.sql && deps.auth) {
         await api.register(identityRoutes(identityService(deps.sql, deps.auth), deps.auth));
         await api.register(readingsRoutes(readingsService(deps.sql)));
+        if (deps.weather) {
+          await api.register(weatherRoutes(weatherService(deps.sql, deps.weather, deps.fetch ?? fetch, api.log)));
+        }
       }
       if (deps.sql && guards && deps.broker && deps.mqttPublic) {
         const service = deviceService({

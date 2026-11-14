@@ -18,6 +18,14 @@ const app = await buildApp({
     broker,
     mqttPublic: { host: env.MQTT_PUBLIC_HOST, port: env.MQTT_PUBLIC_PORT, tls: env.MQTT_PUBLIC_TLS },
     reservedDeviceIds: env.MQTT_USERNAME ? [env.MQTT_USERNAME] : [],
+    weather: {
+      locationName: env.WEATHER_LOCATION_NAME,
+      lat: env.WEATHER_LAT,
+      lon: env.WEATHER_LON,
+      bmkgAdm4: env.WEATHER_BMKG_ADM4,
+      bmkgBaseUrl: env.BMKG_BASE_URL.replace(/\/$/, ''),
+      openMeteoUrl: env.OPEN_METEO_URL,
+    },
   },
   logger: loggerOptions(env),
 });

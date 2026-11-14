@@ -34,6 +34,13 @@ const ApiBaseSchema = BaseEnvSchema.extend({
   REFRESH_TOKEN_TTL_DAYS: z.coerce.number().int().min(1).max(90).default(7),
   /** Secure cookie flag; defaults to true in production. */
   COOKIE_SECURE: bool.optional(),
+  /** Weather location (PRD WX-1), same defaults as the frontend. */
+  WEATHER_LOCATION_NAME: z.string().min(1).default('Bogor'),
+  WEATHER_LAT: z.coerce.number().min(-90).max(90).default(-6.595),
+  WEATHER_LON: z.coerce.number().min(-180).max(180).default(106.797),
+  WEATHER_BMKG_ADM4: z.string().regex(/^\d{2}\.\d{2}\.\d{2}\.\d{4}$/, 'WEATHER_BMKG_ADM4 format 32.71.03.1002').default('32.71.03.1002'),
+  BMKG_BASE_URL: z.url().default('https://api.bmkg.go.id'),
+  OPEN_METEO_URL: z.url().default('https://api.open-meteo.com/v1/forecast'),
 });
 
 /**
