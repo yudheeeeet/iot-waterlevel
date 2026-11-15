@@ -6,3 +6,6 @@ dist
 
 # Firmware: konfigurasi berisi password WiFi & token device
 firmware/**/config.h
+
+# Personal notes, not part of the project
+PANDUAN_AGENT_SKILLS.md
