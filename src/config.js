@@ -11,6 +11,8 @@ export const config = {
   apiUrl: (env.VITE_API_URL || '').replace(/\/$/, ''),
   wsUrl: env.VITE_WS_URL || '',
   pollIntervalMs: num(env.VITE_POLL_INTERVAL_MS, 60000),
+  // WebSocket realtime. Default: on with the mock, off with the real backend (WS is phase F2; MVP polls REST).
+  realtime: env.VITE_REALTIME ? env.VITE_REALTIME !== 'off' : env.VITE_USE_MOCK !== 'false',
 
   weather: {
     source: env.VITE_WEATHER_SOURCE || 'direct', // 'direct' | 'backend' | 'mock'

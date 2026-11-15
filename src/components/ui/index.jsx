@@ -30,19 +30,21 @@ export function Button({ variant = 'secondary', className = '', ...rest }) {
   return <button type="button" className={`btn btn--${variant} ${className}`} {...rest} />;
 }
 
-export function Modal({ title, onClose, children, footer }) {
+/** `locked`: Escape, backdrop click and the X button do nothing; only the footer can close it. */
+export function Modal({ title, onClose, children, footer, locked = false }) {
   useEffect(() => {
+    if (locked) return undefined;
     const onKey = (e) => e.key === 'Escape' && onClose();
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [onClose]);
+  }, [onClose, locked]);
 
   return (
-    <div className="modal-backdrop" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
+    <div className="modal-backdrop" onMouseDown={(e) => !locked && e.target === e.currentTarget && onClose()}>
       <div className="modal" role="dialog" aria-modal="true" aria-label={title}>
         <div className="modal__head">
           <h3>{title}</h3>
-          <button type="button" className="icon-btn" onClick={onClose} aria-label="Close"><X size={16} /></button>
+          {!locked && <button type="button" className="icon-btn" onClick={onClose} aria-label="Close"><X size={16} /></button>}
         </div>
         <div className="modal__body">{children}</div>
         {footer && <div className="modal__foot">{footer}</div>}

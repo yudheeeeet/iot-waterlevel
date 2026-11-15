@@ -365,3 +365,44 @@ button { font: inherit; color: inherit; }
   .trend__custom { width: 100%; flex-wrap: wrap; }
   .thresholds { grid-template-columns: 1fr; }
 }
+
+/* ── Login & account (MVP auth) ─────────────────────────────── */
+.login-page { min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; padding: 16px; background: var(--color-page); }
+.login-footer { font-size: 12px; color: var(--color-text-muted); }
+.password-input { position: relative; display: flex; }
+.password-input input { flex: 1; padding-right: 38px; }
+.password-input__toggle {
+  position: absolute; top: 0; right: 0; height: 100%; width: 36px; display: grid; place-items: center;
+  border: 0; background: transparent; color: var(--color-text-muted); cursor: pointer; border-radius: var(--radius-sm);
+}
+.password-input__toggle:hover { color: var(--color-text-strong); }
+.password-input__toggle:focus-visible { outline: 2px solid rgba(8,137,168,.35); }
+.login-card { width: min(380px, 100%); display: flex; flex-direction: column; gap: 14px; padding: 28px; }
+.login-card { overflow: hidden; }
+.login-card__brand { margin: -28px -28px 4px; padding: 18px 28px; background: var(--color-navy-900); }
+.login-card__logo { height: 40px; display: block; }
+.login-card__title { font-size: 20px; font-weight: 600; color: var(--color-text-strong); margin: 0; }
+.login-card__submit { justify-content: center; gap: 8px; display: inline-flex; align-items: center; }
+button.sys-header__avatar { color: #fff; cursor: pointer; }
+.user-menu { width: 240px; display: flex; flex-direction: column; gap: 4px; padding: 14px; font-size: var(--fs-caption); }
+.user-menu strong { font-size: var(--fs-body2); }
+.user-menu__role { align-self: flex-start; margin: 4px 0 8px; padding: 2px 8px; border-radius: 999px; background: var(--color-surface-subtle); font-weight: 600; }
+.user-menu__logout { display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
+
+/* ── Device credentials (token shown once) ─────────────────── */
+.creds { display: flex; flex-direction: column; gap: 12px; font-size: var(--fs-caption); }
+.creds__warning, .creds__error, .creds__ok { display: flex; gap: 8px; align-items: flex-start; margin: 0; padding: 10px; border-radius: var(--radius-sm); }
+.creds__warning { background: var(--warning-50); color: var(--warning-600); }
+.creds__error { background: var(--error-50); color: var(--error-600); }
+.creds__ok { background: var(--success-50); color: var(--success-600); }
+.creds__row { display: flex; flex-direction: column; gap: 4px; }
+.creds__value { display: flex; align-items: center; gap: 6px; }
+.creds__value code { flex: 1; padding: 6px 8px; border: 1px solid var(--color-border); border-radius: var(--radius-sm); background: var(--color-surface-subtle); overflow-wrap: anywhere; user-select: all; }
+.creds__mono { font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-size: 12px; }
+.creds__setup { display: flex; flex-direction: column; gap: 8px; padding: 10px; border: 1px solid var(--color-border); border-radius: var(--radius-sm); }
+.creds__download { align-self: flex-start; }
+.creds__hint { margin: -4px 0 0; font-size: 12px; }
+.creds__confirm { display: flex; gap: 8px; align-items: center; font-size: 13px; cursor: pointer; }
+.creds__setup ol { margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 4px; }
+.modal:has(.creds) { width: min(520px, 100%); }
+.dm-popup__broker { margin: 6px 0 0; color: var(--warning-600); font-size: var(--fs-caption); }

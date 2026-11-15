@@ -5,16 +5,33 @@ import CurrentReading from './components/CurrentReading';
 import { TodayWeather, ForecastWeek } from './components/Weather';
 import WaterLevelTrend from './components/WaterLevelTrend';
 import Footer from './components/Footer';
+import Login from './components/Login';
+import { useAuth } from './hooks/useAuth';
 import { useMonitoring } from './hooks/useMonitoring';
 import { useWeather } from './hooks/useWeather';
 
+/** Every user must log in (PRD ID-1); the dashboard is mounted only with a session. */
 export default function App() {
+  const auth = useAuth();
+  if (!auth.ready) return <div className="login-page"><p className="muted">Loading…</p></div>;
+  if (!auth.user) return <Login />;
+  return <Dashboard auth={auth} />;
+}
+
+function Dashboard({ auth }) {
   const m = useMonitoring();
   const w = useWeather();
 
   return (
     <div className="app">
-      <Header devices={m.devices} summary={m.summary} lastUpdate={m.lastUpdate} realtimeState={m.realtimeState} />
+      <Header
+        devices={m.devices}
+        summary={m.summary}
+        lastUpdate={m.lastUpdate}
+        realtimeState={m.realtimeState}
+        user={auth.user}
+        onLogout={auth.logout}
+      />
 
       <main className="dashboard">
         {m.error && (
@@ -33,6 +50,8 @@ export default function App() {
             onAdd={m.addDevice}
             onUpdate={m.updateDevice}
             onRemove={m.removeDevice}
+            onRotate={m.rotateToken}
+            canEdit={auth.isAdmin}
           />
           <CurrentReading device={m.selectedDevice} />
         </div>

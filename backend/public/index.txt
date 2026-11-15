@@ -1,0 +1,1 @@
+Baruna water level API. Endpoints under /api (see /api/health).

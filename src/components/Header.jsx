@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Bell } from 'lucide-react';
+import { Bell, LogOut } from 'lucide-react';
 import { config } from '../config';
 import { formatDateTime } from '../utils/format';
 import { displayStatus, statusMeta } from '../utils/status';
@@ -9,10 +9,11 @@ import bundledLogo from '../assets/logo-baruna-inotek.svg';
 // Without VITE_LOGO_URL the bundled src/assets/logo-baruna-inotek.svg is used.
 const logoUrl = config.logo.url || bundledLogo;
 
-export default function Header({ devices, summary, lastUpdate, realtimeState }) {
+export default function Header({ devices, summary, lastUpdate, realtimeState, user, onLogout }) {
   const total = summary?.devices?.total ?? devices.length;
   const online = summary?.devices?.online ?? devices.filter((d) => d.online).length;
-  const connected = realtimeState === 'open';
+  // 'open' = WebSocket connected; 'polling' = REST refresh working (MVP, VITE_REALTIME=off)
+  const connected = realtimeState === 'open' || realtimeState === 'polling';
 
   return (
     <header className="sys-header">
@@ -31,8 +32,44 @@ export default function Header({ devices, summary, lastUpdate, realtimeState }) 
       </div>
       <span className="sys-header__divider" />
       <Notifications devices={devices} />
-      <div className="sys-header__avatar" aria-label="User">{config.user.initials}</div>
+      <UserMenu user={user} onLogout={onLogout} />
     </header>
+  );
+}
+
+function initials(name) {
+  const parts = String(name || '').trim().split(/\s+/).filter(Boolean);
+  return (parts.length > 1 ? parts[0][0] + parts[parts.length - 1][0] : (parts[0] || '?').slice(0, 2)).toUpperCase();
+}
+
+/** Avatar with the signed-in user, role and Sign out. */
+function UserMenu({ user, onLogout }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef(null);
+
+  useEffect(() => {
+    if (!open) return undefined;
+    const close = (e) => ref.current && !ref.current.contains(e.target) && setOpen(false);
+    document.addEventListener('mousedown', close);
+    return () => document.removeEventListener('mousedown', close);
+  }, [open]);
+
+  return (
+    <div className="notif" ref={ref}>
+      <button type="button" className="sys-header__avatar" aria-label="Account" onClick={() => setOpen((o) => !o)}>
+        {user ? initials(user.name) : config.user.initials}
+      </button>
+      {open && user && (
+        <div className="notif__panel user-menu">
+          <strong>{user.name}</strong>
+          <span className="muted">{user.email}</span>
+          <span className="user-menu__role">{user.role === 'admin' ? 'Admin' : 'Viewer'}</span>
+          <button type="button" className="btn btn--secondary user-menu__logout" onClick={onLogout}>
+            <LogOut size={15} strokeWidth={1.75} /> Sign out
+          </button>
+        </div>
+      )}
+    </div>
   );
 }
 

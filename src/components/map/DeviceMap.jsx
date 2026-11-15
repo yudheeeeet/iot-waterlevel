@@ -7,6 +7,7 @@ import { formatDayMonth, formatTime } from '../../utils/format';
 import { displayStatus, statusMeta, LEVEL_STATUS } from '../../utils/status';
 import { Button, StatusBadge, Modal } from '../ui';
 import DevicePanel from './DevicePanel';
+import DeviceCredentials from './DeviceCredentials';
 
 const LAYERS = {
   satellite: {
@@ -47,11 +48,16 @@ const draftIcon = L.divIcon({
   iconAnchor: [14, 14],
 });
 
-export default function DeviceMap({ devices, selectedId, onSelect, onAdd, onUpdate, onRemove }) {
+/**
+ * canEdit: admin only — viewers see the map without Add / Edit / Rotate / Remove (PRD ID-2).
+ */
+export default function DeviceMap({ devices, selectedId, onSelect, onAdd, onUpdate, onRemove, onRotate, canEdit = false }) {
   const [map, setMap] = useState(null);
   const [layer, setLayer] = useState('satellite');
   const [panel, setPanel] = useState(null); // { mode: 'add'|'edit', draft: {id,name,lat,lon} }
   const [confirmRemove, setConfirmRemove] = useState(false);
+  const [confirmRotate, setConfirmRotate] = useState(false);
+  const [issued, setIssued] = useState(null); // one-time token + MQTT info after add / rotate
   const [busy, setBusy] = useState(false);
   const [actionError, setActionError] = useState(null);
   const fitted = useRef(false);
@@ -80,8 +86,12 @@ export default function DeviceMap({ devices, selectedId, onSelect, onAdd, onUpda
     setBusy(true);
     setActionError(null);
     try {
-      if (panel.mode === 'add') await onAdd(draft);
-      else await onUpdate(draft.id, { name: draft.name, lat: draft.lat, lon: draft.lon });
+      if (panel.mode === 'add') {
+        const created = await onAdd(draft);
+        if (created?.token) setIssued(created);
+      } else {
+        await onUpdate(draft.id, { name: draft.name, lat: draft.lat, lon: draft.lon });
+      }
       setPanel(null);
     } catch (e) {
       setActionError(e.message || 'Could not save device');
@@ -98,6 +108,19 @@ export default function DeviceMap({ devices, selectedId, onSelect, onAdd, onUpda
     } catch (e) {
       setActionError(e.message || 'Could not remove device');
       setConfirmRemove(false);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const doRotate = async () => {
+    setBusy(true);
+    try {
+      setIssued(await onRotate(selected.id));
+      setConfirmRotate(false);
+    } catch (e) {
+      setActionError(e.message || 'Could not rotate the token');
+      setConfirmRotate(false);
     } finally {
       setBusy(false);
     }
@@ -137,6 +160,7 @@ export default function DeviceMap({ devices, selectedId, onSelect, onAdd, onUpda
               device={d}
               selected={d.id === selectedId}
               onSelect={onSelect}
+              showBroker={canEdit}
             />
           ))}
 
@@ -182,12 +206,41 @@ export default function DeviceMap({ devices, selectedId, onSelect, onAdd, onUpda
           ))}
         </div>
         {actionError && !panel && <span className="form-error">{actionError}</span>}
-        <div className="map-card__actions">
-          <Button variant="primary" onClick={openAdd}>Add Device</Button>
-          <Button onClick={openEdit} disabled={!selected}>Edit Coordinates</Button>
-          <Button variant="danger" onClick={() => setConfirmRemove(true)} disabled={!selected}>Remove Device</Button>
-        </div>
+        {canEdit && (
+          <div className="map-card__actions">
+            <Button variant="primary" onClick={openAdd}>Add Device</Button>
+            <Button onClick={openEdit} disabled={!selected}>Edit Coordinates</Button>
+            {onRotate && <Button onClick={() => setConfirmRotate(true)} disabled={!selected}>Rotate Token</Button>}
+            <Button variant="danger" onClick={() => setConfirmRemove(true)} disabled={!selected}>Remove Device</Button>
+          </div>
+        )}
       </div>
+
+      {confirmRotate && selected && (
+        <Modal
+          title="Rotate device token?"
+          onClose={() => setConfirmRotate(false)}
+          footer={
+            <>
+              <Button onClick={() => setConfirmRotate(false)}>Cancel</Button>
+              <Button variant="primary" onClick={doRotate} disabled={busy}>{busy ? 'Rotating…' : 'Rotate token'}</Button>
+            </>
+          }
+        >
+          <p>
+            <strong>{selected.id} · {selected.name}</strong> gets a new token. The current token stops working
+            immediately, so the device stays offline until its firmware is flashed with the new token.
+          </p>
+        </Modal>
+      )}
+
+      {issued && (
+        <DeviceCredentials
+          issued={issued}
+          onClose={() => setIssued(null)}
+          onMarkSynced={(id) => onUpdate(id, { brokerSynced: true })}
+        />
+      )}
 
       {confirmRemove && selected && (
         <Modal
@@ -210,7 +263,7 @@ export default function DeviceMap({ devices, selectedId, onSelect, onAdd, onUpda
   );
 }
 
-function DeviceMarker({ device, selected, onSelect }) {
+function DeviceMarker({ device, selected, onSelect, showBroker }) {
   const ref = useRef(null);
   const status = displayStatus(device);
   const showLabel = selected || status === 'warning' || status === 'critical';
@@ -234,13 +287,19 @@ function DeviceMarker({ device, selected, onSelect }) {
       title={`${device.id} · ${device.name}`}
     >
       <Popup className="dm-popup" closeButton={false} autoPanPadding={[24, 24]} minWidth={250}>
-        <DevicePopup device={device} status={status} onClose={() => ref.current?.closePopup()} />
+        <DevicePopup device={device} status={status} showBroker={showBroker} onClose={() => ref.current?.closePopup()} />
       </Popup>
     </Marker>
   );
 }
 
-function DevicePopup({ device, status, onClose }) {
+const BROKER_NOTE = {
+  pending: 'Broker: waiting for manual setup',
+  needs_token_rotation: 'Broker: account missing — rotate the token',
+  error: 'Broker: sync failed — rotate the token to retry',
+};
+
+function DevicePopup({ device, status, onClose, showBroker }) {
   const r = device.lastReading;
   return (
     <div className="dm-popup__body">
@@ -263,6 +322,7 @@ function DevicePopup({ device, status, onClose }) {
         {r ? `Updated ${formatDayMonth(r.timestamp)} · ${formatTime(r.timestamp, { seconds: true })} WIB` : 'No readings yet'}
         {status !== 'offline' && status !== 'normal' && ` · ${statusMeta(status).label}`}
       </p>
+      {showBroker && BROKER_NOTE[device.brokerSyncStatus] && <p className="dm-popup__broker">{BROKER_NOTE[device.brokerSyncStatus]}</p>}
     </div>
   );
 }
