@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { LogIn } from 'lucide-react';
+import { LogIn, Eye, EyeOff } from 'lucide-react';
 import { authService } from '../services/authService';
 import { Button } from './ui';
 import bundledLogo from '../assets/logo-baruna-inotek.svg';
@@ -13,6 +13,7 @@ export default function Login() {
   const [password, setPassword] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(null);
+  const [showPassword, setShowPassword] = useState(false);
 
   const submit = async (e) => {
     e.preventDefault();
@@ -45,13 +46,32 @@ export default function Login() {
         </label>
         <label className="field">
           <span>Password</span>
-          <input type="password" autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} required />
+          <div className="password-input">
+            <input
+              type={showPassword ? 'text' : 'password'}
+              autoComplete="current-password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+            />
+            <button
+              type="button"
+              className="password-input__toggle"
+              onClick={() => setShowPassword((v) => !v)}
+              aria-label={showPassword ? 'Hide password' : 'Show password'}
+              aria-pressed={showPassword}
+              title={showPassword ? 'Hide password' : 'Show password'}
+            >
+              {showPassword ? <EyeOff size={16} strokeWidth={1.75} /> : <Eye size={16} strokeWidth={1.75} />}
+            </button>
+          </div>
         </label>
         {error && <p className="form-error" role="alert">{error}</p>}
         <Button variant="primary" type="submit" disabled={busy || !email || !password} className="login-card__submit">
           <LogIn size={16} strokeWidth={1.75} /> {busy ? 'Signing in…' : 'Sign in'}
         </Button>
       </form>
+      <footer className="login-footer">© 2026 PT Baruna Inotek</footer>
     </div>
   );
 }
