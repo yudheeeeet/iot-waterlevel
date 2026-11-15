@@ -61,6 +61,8 @@ Penonton (browser laptop / HP di hotspot yang sama) ◄── Dashboard :5173 �
    nyalakan lagi → langsung Online. (Agar tidak menunggu 5 menit, sebelumnya set device dengan
    `offlineAfterSec` lebih pendek, lihat di bawah.)
 6. **Admin & keamanan device** — logout, login **admin**: Add Device → jendela token sekali tampil + info MQTT.
+   Klik **Download credentials (.txt)**: file berisi token, info MQTT, dan potongan `config.h`.
+   Jendela baru bisa ditutup setelah token diunduh, disalin, atau dicentang "sudah disimpan".
    Rotate Token pada device simulator → device lama langsung ditolak broker.
 
 Mempersingkat batas offline untuk demo (contoh 60 detik) lalu mengembalikannya:

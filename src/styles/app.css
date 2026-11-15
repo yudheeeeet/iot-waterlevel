@@ -391,6 +391,9 @@ button.sys-header__avatar { color: #fff; cursor: pointer; }
 .creds__value code { flex: 1; padding: 6px 8px; border: 1px solid var(--color-border); border-radius: var(--radius-sm); background: var(--color-surface-subtle); overflow-wrap: anywhere; user-select: all; }
 .creds__mono { font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-size: 12px; }
 .creds__setup { display: flex; flex-direction: column; gap: 8px; padding: 10px; border: 1px solid var(--color-border); border-radius: var(--radius-sm); }
+.creds__download { align-self: flex-start; }
+.creds__hint { margin: -4px 0 0; font-size: 12px; }
+.creds__confirm { display: flex; gap: 8px; align-items: center; font-size: 13px; cursor: pointer; }
 .creds__setup ol { margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 4px; }
 .modal:has(.creds) { width: min(520px, 100%); }
 .dm-popup__broker { margin: 6px 0 0; color: var(--warning-600); font-size: var(--fs-caption); }
