@@ -1,0 +1,20 @@
+# Worker (MQTT → database, presence, heartbeat). Hanya boleh SATU instance (client id MQTT tetap).
+# Dipasang ke /etc/systemd/system/ oleh deploy/vps/install-services.sh.
+[Unit]
+Description=Baruna Water Level - Worker
+After=network-online.target postgresql.service mosquitto.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=__USER__
+WorkingDirectory=__APP_DIR__/backend
+ExecStart=/usr/bin/node dist/worker.js
+Restart=always
+RestartSec=3
+Environment=NODE_ENV=production
+NoNewPrivileges=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target
