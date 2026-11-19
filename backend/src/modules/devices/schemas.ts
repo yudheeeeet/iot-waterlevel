@@ -13,6 +13,11 @@ const Lon = z.number({ error: 'lon wajib berupa angka' }).min(-180, 'lon harus -
 const IntervalSec = z.number().int().min(10, 'Interval minimal 10 detik').max(3600, 'Interval maksimal 3600 detik');
 const ThresholdCm = z.number().int().min(1).max(100_000);
 const InstalledAt = z.iso.datetime({ offset: true, error: 'installedAt harus tanggal ISO-8601' });
+/** Sensor height above the substrate (bottom of the water), cm like the readings; same range as the DB check. */
+const SensorHeightCm = z
+  .number({ error: 'sensorHeightCm wajib berupa angka' })
+  .gt(0, 'sensorHeightCm harus lebih dari 0 cm')
+  .max(2000, 'sensorHeightCm maksimal 2000 cm');
 
 const thresholdOrder = (v: { thresholdWarningCm?: number | undefined; thresholdCriticalCm?: number | undefined }) =>
   v.thresholdWarningCm === undefined || v.thresholdCriticalCm === undefined || v.thresholdCriticalCm < v.thresholdWarningCm;
@@ -31,6 +36,7 @@ export const CreateDeviceBody = z
     thresholdWarningCm: ThresholdCm.optional(),
     thresholdCriticalCm: ThresholdCm.optional(),
     installedAt: InstalledAt.optional(),
+    sensorHeightCm: SensorHeightCm.optional(),
   })
   .refine(thresholdOrder, thresholdOrderIssue);
 export type CreateDeviceInput = z.infer<typeof CreateDeviceBody>;
@@ -46,6 +52,8 @@ export const UpdateDeviceBody = z
     thresholdWarningCm: ThresholdCm.optional(),
     thresholdCriticalCm: ThresholdCm.optional(),
     installedAt: InstalledAt.nullable().optional(),
+    /** null = clear it (water depth is no longer shown). */
+    sensorHeightCm: SensorHeightCm.nullable().optional(),
     isEnabled: z.boolean().optional(),
     /** `manual` broker mode: the admin confirms the console steps were done. */
     brokerSynced: z.literal(true).optional(),

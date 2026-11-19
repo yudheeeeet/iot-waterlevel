@@ -21,6 +21,7 @@ export interface DeviceRow {
   lastReadingCm: string | null; // numeric → string in postgres.js
   lastReadingAt: Date | null;
   lastStatus: LevelStatus | null;
+  sensorHeightCm: string | null; // numeric → string in postgres.js
   installedAt: Date | null;
   createdAt: Date;
   updatedAt: Date;
@@ -38,6 +39,7 @@ export interface DevicePatch {
   threshold_warning_cm?: number;
   threshold_critical_cm?: number;
   installed_at?: string | null;
+  sensor_height_cm?: number | null;
   is_enabled?: boolean;
 }
 
@@ -57,7 +59,7 @@ const deviceCols = (sql: Sql) => sql`
   d.threshold_warning_cm as "thresholdWarningCm", d.threshold_critical_cm as "thresholdCriticalCm",
   d.is_enabled as "isEnabled", d.broker_sync_status as "brokerSyncStatus",
   d.last_seen_at as "lastSeenAt", d.last_reading_cm as "lastReadingCm", d.last_reading_at as "lastReadingAt",
-  d.last_status as "lastStatus", d.installed_at as "installedAt",
+  d.last_status as "lastStatus", d.sensor_height_cm as "sensorHeightCm", d.installed_at as "installedAt",
   d.created_at as "createdAt", d.updated_at as "updatedAt",
   t.token_last4 as "tokenLast4",
   ${onlineSql(sql)} as online`;
@@ -92,12 +94,14 @@ export const devicesRepo = (sql: Sql) => ({
     thresholdWarningCm?: number | undefined;
     thresholdCriticalCm?: number | undefined;
     installedAt?: string | undefined;
+    sensorHeightCm?: number | undefined;
   }): Promise<void> {
     await sql`
-      insert into devices (id, name, lat, lon, reporting_interval_sec, threshold_warning_cm, threshold_critical_cm, installed_at)
+      insert into devices (id, name, lat, lon, reporting_interval_sec, threshold_warning_cm, threshold_critical_cm,
+                           installed_at, sensor_height_cm)
       values (${d.id}, ${d.name}, ${d.lat}, ${d.lon},
               ${d.reportingIntervalSec ?? 60}, ${d.thresholdWarningCm ?? 200}, ${d.thresholdCriticalCm ?? 100},
-              ${d.installedAt ?? null})`;
+              ${d.installedAt ?? null}, ${d.sensorHeightCm ?? null})`;
   },
 
   async update(id: string, patch: DevicePatch): Promise<boolean> {

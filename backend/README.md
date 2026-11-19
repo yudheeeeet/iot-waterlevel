@@ -82,8 +82,11 @@ akun tanpa device dihapus, device tanpa akun ditandai `needs_token_rotation` (pe
 | Endpoint | Akses | Keterangan |
 |---|---|---|
 | `GET /api/devices`, `GET /api/devices/:id` | login | `online` dihitung saat dibaca |
-| `POST /api/devices` | admin | body `{ id, name, lat, lon, reportingIntervalSec?, thresholdWarningCm?, thresholdCriticalCm?, installedAt? }` → device + `token` (**sekali tampil**) + `mqtt` |
-| `PATCH /api/devices/:id` | admin | nama, lokasi, interval, threshold, `isEnabled`, `brokerSynced: true` (mode manual) |
+| `POST /api/devices` | admin | body `{ id, name, lat, lon, reportingIntervalSec?, thresholdWarningCm?, thresholdCriticalCm?, installedAt?, sensorHeightCm? }` → device + `token` (**sekali tampil**) + `mqtt` |
+| `PATCH /api/devices/:id` | admin | nama, lokasi, interval, threshold, `sensorHeightCm` (`null` = hapus), `isEnabled`, `brokerSynced: true` (mode manual) |
+
+`sensorHeightCm`: tinggi sensor dari dasar air (cm, > 0 s.d. 2000, opsional). Dashboard menampilkan kedalaman air
+= `sensorHeightCm − lastReading.distanceCm` di popup peta; nilai ini tidak disimpan dan tidak memengaruhi `status`.
 | `POST /api/devices/:id/token/rotate` | admin | token baru, token lama langsung ditolak broker |
 | `DELETE /api/devices/:id` | admin | soft delete; histori tetap; ID tidak bisa dipakai ulang |
 

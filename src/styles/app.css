@@ -206,16 +206,25 @@ button { font: inherit; color: inherit; }
 .dm-popup__reading { display: flex; align-items: center; justify-content: space-between; }
 .dm-popup__reading > div { display: flex; flex-direction: column; gap: 3px; font-size: var(--fs-caption); }
 .dm-popup__reading strong { font-family: var(--font-display); font-size: 20px; color: var(--color-navy-900); }
+.dm-popup__depth { font-size: var(--fs-caption); color: var(--color-text-strong); }
+.dm-popup__depth--warn { color: var(--warning-600); }
 
 /* add / edit panel */
 .device-panel {
-  position: absolute; top: 12px; right: 12px; z-index: 600; width: 280px;
-  display: flex; flex-direction: column; gap: 10px; padding: 14px;
+  /* above Leaflet controls / attribution (z-index 1000), below dropdowns (1200) and modals (2000) */
+  position: absolute; top: 12px; right: 12px; z-index: 1001; width: 280px;
+  max-height: calc(100% - 24px); overflow-y: auto; overscroll-behavior: contain;
+  display: flex; flex-direction: column; gap: 10px; padding: 14px 14px 0;
   background: #fff; border-radius: var(--radius-lg); box-shadow: var(--shadow-popup);
 }
+.device-panel > * { flex-shrink: 0; }
 .device-panel__head { display: flex; justify-content: space-between; align-items: center; font-size: var(--fs-body2); }
 .device-panel__hint { display: flex; align-items: center; gap: 5px; font-size: var(--fs-caption); color: var(--color-teal-600); }
-.device-panel__actions { display: flex; justify-content: flex-end; gap: 6px; }
+/* actions stay visible at the bottom while the form scrolls inside the map */
+.device-panel__actions {
+  position: sticky; bottom: 0; display: flex; justify-content: flex-end; gap: 6px;
+  margin: 2px -14px 0; padding: 10px 14px 14px; background: #fff; border-top: 1px solid var(--color-border);
+}
 .device-panel .btn { height: 34px; }
 .field { display: flex; flex-direction: column; gap: 4px; font-size: var(--fs-caption); color: var(--color-text-muted); }
 .field input {
@@ -224,7 +233,14 @@ button { font: inherit; color: inherit; }
 }
 .field input:focus { outline: 2px solid rgba(8,137,168,.35); border-color: var(--color-teal-600); }
 .field input:disabled { background: var(--color-surface-subtle); }
-.field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.field input[aria-invalid="true"] { border-color: var(--error-500); }
+.field__help { font-size: var(--fs-caption); color: var(--color-text-muted); }
+.field__help--error { color: var(--error-600); }
+.field-row { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.field-row .field { min-width: 0; }
+.field-row .field input { width: 100%; padding: 0 8px; font-variant-numeric: tabular-nums; -moz-appearance: textfield; appearance: textfield; }
+.field-row .field input::-webkit-outer-spin-button,
+.field-row .field input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
 
 /* modal */
 .modal-backdrop { position: fixed; inset: 0; z-index: 2000; background: rgba(13,48,103,.35); display: grid; place-items: center; padding: 16px; }

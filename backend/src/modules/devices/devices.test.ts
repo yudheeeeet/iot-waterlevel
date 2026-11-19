@@ -98,6 +98,7 @@ describe.skipIf(!hasTestDb)('devices (DB)', () => {
         offlineAfterSec: 300,
         thresholdWarningCm: 200,
         thresholdCriticalCm: 100,
+        sensorHeightCm: null,
         brokerSyncStatus: 'synced',
         tokenLast4: d.token.slice(-4),
         mqtt: { host: 'mqtt.example.test', port: 1883, tls: false, topic: 'baruna/devices/BWN-001/readings', username: 'BWN-001' },
@@ -151,6 +152,8 @@ describe.skipIf(!hasTestDb)('devices (DB)', () => {
         [{ ...body, id: 'BWN-V3', name: '' }, 'name'],
         [{ ...body, id: 'BWN-V4', thresholdWarningCm: 100, thresholdCriticalCm: 150 }, 'thresholdCriticalCm'],
         [{ ...body, id: 'BWN-V5', reportingIntervalSec: 5 }, 'reportingIntervalSec'],
+        [{ ...body, id: 'BWN-V6', sensorHeightCm: 0 }, 'sensorHeightCm'],
+        [{ ...body, id: 'BWN-V7', sensorHeightCm: 2000.01 }, 'sensorHeightCm'],
       ];
       for (const [payload, field] of cases) {
         const res = await create(payload);
@@ -214,6 +217,27 @@ describe.skipIf(!hasTestDb)('devices (DB)', () => {
         payload: { brokerSynced: true },
       });
       expect(notManual.json().error.code).toBe('BROKER_SYNC_NOT_MANUAL');
+    });
+
+    it('sensorHeightCm: set on create, changed and cleared by PATCH, validated', async () => {
+      const created = await create({ ...body, id: 'BWN-H1', sensorHeightCm: 380 });
+      expect(created.statusCode).toBe(201);
+      expect(created.json().sensorHeightCm).toBe(380);
+
+      const patch = (payload: object) =>
+        app.inject({ method: 'PATCH', url: '/api/devices/BWN-H1', headers: as(adminToken), payload });
+
+      const changed = await patch({ sensorHeightCm: 412.5 });
+      expect(changed.statusCode).toBe(200);
+      expect(changed.json().sensorHeightCm).toBe(412.5);
+
+      const cleared = await patch({ sensorHeightCm: null });
+      expect(cleared.statusCode).toBe(200);
+      expect(cleared.json().sensorHeightCm).toBeNull();
+
+      const bad = await patch({ sensorHeightCm: -1 });
+      expect(bad.statusCode).toBe(400);
+      expect(bad.json().error.details[0].field).toBe('sensorHeightCm');
     });
 
     it('online is computed from last_seen_at and the offline window', async () => {

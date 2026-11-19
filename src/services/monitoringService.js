@@ -13,11 +13,11 @@ export const monitoringService = {
   /** GET /api/devices → Device[] */
   getDevices: () => (useMock ? mockApi.getDevices() : request('/api/devices')),
 
-  /** POST /api/devices  body { id, name, lat, lon } → Device */
+  /** POST /api/devices  body { id, name, lat, lon, sensorHeightCm? } → Device */
   createDevice: (device) =>
     useMock ? mockApi.createDevice(device) : request('/api/devices', { method: 'POST', body: device }),
 
-  /** PATCH /api/devices/:id  body { name?, lat?, lon? } → Device */
+  /** PATCH /api/devices/:id  body { name?, lat?, lon?, sensorHeightCm? (null = clear) } → Device */
   updateDevice: (id, patch) =>
     useMock ? mockApi.updateDevice(id, patch) : request(`/api/devices/${encodeURIComponent(id)}`, { method: 'PATCH', body: patch }),
 

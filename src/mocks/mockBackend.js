@@ -64,6 +64,7 @@ function toPublic(device, now = Date.now()) {
     online: device.online,
     status: levelStatusFromDistance(distanceCm),
     lastReading: { distanceCm, timestamp: new Date(t).toISOString() },
+    sensorHeightCm: device.sensorHeightCm ?? null,
     installedAt: device.installedAt,
   };
 }
@@ -81,12 +82,15 @@ export const mockApi = {
     return state.devices.map((d) => toPublic(d));
   },
 
-  async createDevice({ id, name, lat, lon }) {
+  async createDevice({ id, name, lat, lon, sensorHeightCm = null }) {
     await delay();
     if (state.devices.some((d) => d.id === id)) {
       throw Object.assign(new Error(`Device ${id} already exists`), { status: 409 });
     }
-    const device = { id, name, lat, lon, base: 300, amp: 30, online: true, lastSeen: Date.now(), installedAt: new Date().toISOString() };
+    const device = {
+      id, name, lat, lon, sensorHeightCm,
+      base: 300, amp: 30, online: true, lastSeen: Date.now(), installedAt: new Date().toISOString(),
+    };
     state.devices.push(device);
     return toPublic(device);
   },
@@ -94,7 +98,7 @@ export const mockApi = {
   async updateDevice(id, patch) {
     await delay();
     const d = find(id);
-    Object.assign(d, pick(patch, ['name', 'lat', 'lon']));
+    Object.assign(d, pick(patch, ['name', 'lat', 'lon', 'sensorHeightCm']));
     return toPublic(d);
   },
 

@@ -54,7 +54,7 @@ const draftIcon = L.divIcon({
 export default function DeviceMap({ devices, selectedId, onSelect, onAdd, onUpdate, onRemove, onRotate, canEdit = false }) {
   const [map, setMap] = useState(null);
   const [layer, setLayer] = useState('satellite');
-  const [panel, setPanel] = useState(null); // { mode: 'add'|'edit', draft: {id,name,lat,lon} }
+  const [panel, setPanel] = useState(null); // { mode: 'add'|'edit', draft: {id,name,lat,lon,sensorHeightCm} }
   const [confirmRemove, setConfirmRemove] = useState(false);
   const [confirmRotate, setConfirmRotate] = useState(false);
   const [issued, setIssued] = useState(null); // one-time token + MQTT info after add / rotate
@@ -74,23 +74,32 @@ export default function DeviceMap({ devices, selectedId, onSelect, onAdd, onUpda
   const openAdd = () => {
     const c = map?.getCenter();
     setActionError(null);
-    setPanel({ mode: 'add', draft: { id: nextId(devices), name: '', lat: round6(c?.lat ?? config.location.lat), lon: round6(c?.lng ?? config.location.lon) } });
+    setPanel({
+      mode: 'add',
+      draft: { id: nextId(devices), name: '', lat: round6(c?.lat ?? config.location.lat), lon: round6(c?.lng ?? config.location.lon), sensorHeightCm: NaN },
+    });
   };
   const openEdit = () => {
     if (!selected) return;
     setActionError(null);
-    setPanel({ mode: 'edit', draft: { id: selected.id, name: selected.name, lat: selected.lat, lon: selected.lon } });
+    setPanel({
+      mode: 'edit',
+      draft: { id: selected.id, name: selected.name, lat: selected.lat, lon: selected.lon, sensorHeightCm: selected.sensorHeightCm ?? NaN },
+    });
   };
 
   const submitPanel = async (draft) => {
     setBusy(true);
     setActionError(null);
+    // Empty sensor height (NaN): omitted on create, cleared (null) on edit.
+    const height = Number.isFinite(draft.sensorHeightCm) ? draft.sensorHeightCm : null;
     try {
       if (panel.mode === 'add') {
-        const created = await onAdd(draft);
+        const input = { id: draft.id, name: draft.name, lat: draft.lat, lon: draft.lon };
+        const created = await onAdd(height === null ? input : { ...input, sensorHeightCm: height });
         if (created?.token) setIssued(created);
       } else {
-        await onUpdate(draft.id, { name: draft.name, lat: draft.lat, lon: draft.lon });
+        await onUpdate(draft.id, { name: draft.name, lat: draft.lat, lon: draft.lon, sensorHeightCm: height });
       }
       setPanel(null);
     } catch (e) {
@@ -209,7 +218,7 @@ export default function DeviceMap({ devices, selectedId, onSelect, onAdd, onUpda
         {canEdit && (
           <div className="map-card__actions">
             <Button variant="primary" onClick={openAdd}>Add Device</Button>
-            <Button onClick={openEdit} disabled={!selected}>Edit Coordinates</Button>
+            <Button onClick={openEdit} disabled={!selected}>Edit Device</Button>
             {onRotate && <Button onClick={() => setConfirmRotate(true)} disabled={!selected}>Rotate Token</Button>}
             <Button variant="danger" onClick={() => setConfirmRemove(true)} disabled={!selected}>Remove Device</Button>
           </div>
@@ -299,8 +308,22 @@ const BROKER_NOTE = {
   error: 'Broker: sync failed — rotate the token to retry',
 };
 
+/**
+ * Water depth = sensor height from substrate − sensor-to-water distance (cm), from the latest reading.
+ * null when the height is not set or there is no reading. A negative result (distance > height:
+ * dry bed or a wrong height) is shown as 0 with a warning.
+ */
+function waterDepth(device) {
+  const h = device.sensorHeightCm;
+  const d = device.lastReading?.distanceCm;
+  if (h == null || d == null) return null;
+  const cm = h - d;
+  return { cm: Math.max(0, cm), invalid: cm < 0 };
+}
+
 function DevicePopup({ device, status, onClose, showBroker }) {
   const r = device.lastReading;
+  const depth = waterDepth(device);
   return (
     <div className="dm-popup__body">
       <div className="dm-popup__head">
@@ -315,6 +338,14 @@ function DevicePopup({ device, status, onClose, showBroker }) {
         <div>
           <span className="muted">Sensor-to-water distance</span>
           <strong>{r ? `${(r.distanceCm / 100).toFixed(2)} m` : '—'}</strong>
+          {depth && (
+            <span
+              className={`dm-popup__depth${depth.invalid ? ' dm-popup__depth--warn' : ''}`}
+              title={depth.invalid ? 'Distance is greater than the sensor height. Check the sensor height in Edit Device.' : undefined}
+            >
+              Water depth {(depth.cm / 100).toFixed(2)} m{depth.invalid && ' ⚠'}
+            </span>
+          )}
         </div>
         <StatusBadge status={device.online ? 'normal' : 'offline'} label={device.online ? 'Online' : 'Offline'} />
       </div>

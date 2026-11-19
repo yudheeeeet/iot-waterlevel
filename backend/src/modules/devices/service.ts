@@ -31,6 +31,8 @@ export interface PublicDevice {
   online: boolean;
   status: DeviceRow['lastStatus'];
   lastReading: { distanceCm: number; timestamp: string } | null;
+  /** Sensor height above the substrate (cm); the dashboard derives water depth from it. null = not set. */
+  sensorHeightCm: number | null;
   installedAt: string | null;
   lastSeen: string | null;
   isEnabled: boolean;
@@ -66,6 +68,7 @@ export function toPublicDevice(r: DeviceRow): PublicDevice {
     online: r.online,
     status: r.lastStatus,
     lastReading: r.lastReadingAt && r.lastReadingCm !== null ? { distanceCm: Number(r.lastReadingCm), timestamp: r.lastReadingAt.toISOString() } : null,
+    sensorHeightCm: r.sensorHeightCm === null ? null : Number(r.sensorHeightCm),
     installedAt: iso(r.installedAt),
     lastSeen: iso(r.lastSeenAt),
     isEnabled: r.isEnabled,
@@ -175,6 +178,7 @@ export function deviceService(deps: DeviceServiceDeps) {
       if (input.thresholdWarningCm !== undefined) patch.threshold_warning_cm = input.thresholdWarningCm;
       if (input.thresholdCriticalCm !== undefined) patch.threshold_critical_cm = input.thresholdCriticalCm;
       if (input.installedAt !== undefined) patch.installed_at = input.installedAt;
+      if (input.sensorHeightCm !== undefined) patch.sensor_height_cm = input.sensorHeightCm;
       if (input.isEnabled !== undefined) patch.is_enabled = input.isEnabled;
 
       try {

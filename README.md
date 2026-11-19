@@ -64,16 +64,19 @@ All timestamps ISO-8601 (UTC or with offset). Distances in **cm**, sensor-to-wat
 { "id": "BWN-003", "name": "Otista Bridge", "lat": -6.6071, "lon": 106.8031,
   "online": true, "status": "normal",
   "lastReading": { "distanceCm": 285, "timestamp": "2026-11-09T07:30:00Z" },
+  "sensorHeightCm": 380,
   "installedAt": "2026-01-15T00:00:00+07:00" }
 ```
 `status`: `normal` (≥ 200 cm) · `warning` (100–199) · `critical` (< 100) — computed by the backend.
 `online`: decided by the backend (e.g. no message for N × 60 s, or MQTT Last Will).
+`sensorHeightCm`: sensor height above the substrate (cm, optional, `null` when not set). The map popup shows
+water depth = `sensorHeightCm − lastReading.distanceCm` (shown as 0 with a warning when negative); it does not affect `status`.
 
 | Method | Path | Response / body |
 |---|---|---|
 | GET | `/api/devices` | `Device[]` |
-| POST | `/api/devices` | body `{ id, name, lat, lon }` → `Device` |
-| PATCH | `/api/devices/:id` | body `{ name?, lat?, lon? }` → `Device` |
+| POST | `/api/devices` | body `{ id, name, lat, lon, sensorHeightCm? }` → `Device` |
+| PATCH | `/api/devices/:id` | body `{ name?, lat?, lon?, sensorHeightCm? }` (`null` clears it) → `Device` |
 | DELETE | `/api/devices/:id` | `204` |
 | GET | `/api/summary` | `{ averageDistanceM, devices: { total, online, offline }, latestReading: { deviceId, distanceCm, timestamp }, rainfallTodayMm \| null, lastUpdate }` |
 | GET | `/api/devices/:id/readings?from&to` | `{ deviceId, intervalSec, points: [{ timestamp, distanceCm }] }` — **downsample** long ranges (≈ ≤ 600 points) and set `intervalSec` |
