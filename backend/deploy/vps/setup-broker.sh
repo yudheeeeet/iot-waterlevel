@@ -39,12 +39,23 @@ systemctl restart mosquitto
 sleep 2
 systemctl is-active --quiet mosquitto || { journalctl -u mosquitto -n 20 --no-pager; exit 1; }
 
+# mosquitto_ctrl warns about running without TLS; harmless here (127.0.0.1 only), so it is filtered out.
+dynsec() {
+  mosquitto_ctrl -h 127.0.0.1 -p "$PORT" -u admin -P "$ADMIN_PW" dynsec "$@" 2>&1 \
+    | grep -v -iE 'without encryption|visible on the network' || true
+}
+
 ctrl() {
-  local out
-  if ! out=$(mosquitto_ctrl -h 127.0.0.1 -p "$PORT" -u admin -P "$ADMIN_PW" dynsec "$@" 2>&1); then
-    [[ "$out" == *"already exists"* ]] || { echo "dynsec $1 gagal: $out" >&2; exit 1; }
+  local out rc=0
+  out=$(mosquitto_ctrl -h 127.0.0.1 -p "$PORT" -u admin -P "$ADMIN_PW" dynsec "$@" 2>&1) || rc=$?
+  out=$(grep -v -iE 'without encryption|visible on the network|^\s*$' <<<"$out" || true)
+  if [[ "$out" == *"already exists"* ]]; then
+    echo "  $1: sudah ada"
+  elif (( rc != 0 )); then
+    echo "dynsec $1 gagal: $out" >&2; exit 1
+  else
+    echo "  $1: OK"
   fi
-  [[ -n "$out" ]] && echo "  $1: $out" || true
 }
 
 ctrl createRole baruna-backend
@@ -54,8 +65,9 @@ ctrl addRoleACL baruna-backend publishClientSend '$CONTROL/dynamic-security/#' a
 ctrl addRoleACL baruna-backend publishClientReceive '$CONTROL/dynamic-security/#' allow
 ctrl createClient "$BACKEND_USER" -p "$BACKEND_PW"
 ctrl setClientPassword "$BACKEND_USER" "$BACKEND_PW"
-if ! mosquitto_ctrl -h 127.0.0.1 -p "$PORT" -u admin -P "$ADMIN_PW" dynsec getClient "$BACKEND_USER" 2>/dev/null \
-    | grep -qE 'Roles:\s+baruna-backend'; then
+# Output is captured first: `grep -q` on a pipe would trip pipefail when it exits early.
+client_info=$(dynsec getClient "$BACKEND_USER")
+if ! grep -qE 'Roles:\s+baruna-backend' <<<"$client_info"; then
   ctrl addClientRole "$BACKEND_USER" baruna-backend
 fi
 echo "Selesai. Broker aktif di port $PORT, akun '$BACKEND_USER' siap."
