@@ -66,7 +66,7 @@ export default function DeviceCredentials({ issued, onClose, onMarkSynced }) {
             </p>
             <CopyRow label="Token (MQTT password)" value={issued.token} mono onCopied={() => setCopied(true)} />
           </>
-        )}}
+        )}
         {mqtt && (
           <>
             <CopyRow label="Username / client ID" value={mqtt.username} mono />
