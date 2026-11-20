@@ -11,7 +11,9 @@ import { parseRange } from './range.js';
  * Each page is an independent query: this works through the Supabase transaction pooler, where a
  * server-side cursor would not survive between statements.
  */
-export const EXPORT_COLUMNS = ['device_id', 'waktu_wib', 'timestamp_utc', 'distance_cm', 'distance_m', 'status'] as const;
+export const EXPORT_COLUMNS = [
+  'device_id', 'waktu_wib', 'timestamp_utc', 'distance_cm', 'distance_m', 'water_level_cm', 'status',
+] as const;
 const PAGE_ROWS = 5_000;
 
 const Format = z.object({ format: z.enum(['csv', 'xlsx'], { error: 'format harus csv atau xlsx' }).default('csv') });
@@ -37,7 +39,23 @@ export interface ExportFile {
   body: Readable;
 }
 
-export function exportReadings(sql: Sql, deviceId: string, query: unknown, now = new Date()): ExportFile {
+/**
+ * Water level (cm, 1 decimal) = sensor height from substrate − sensor-to-water distance, as on the dashboard.
+ * null when the device has no sensor height; a distance above the height (dry bed) gives 0.
+ */
+export function waterLevelCm(sensorHeightCm: number | null, distanceCm: number): number | null {
+  if (sensorHeightCm == null) return null;
+  return +Math.max(0, sensorHeightCm - distanceCm).toFixed(1);
+}
+
+export interface ExportOptions {
+  /** devices.sensor_height_cm; null leaves water_level_cm empty. */
+  sensorHeightCm?: number | null;
+  now?: Date;
+}
+
+export function exportReadings(sql: Sql, deviceId: string, query: unknown, opts: ExportOptions = {}): ExportFile {
+  const { sensorHeightCm = null, now = new Date() } = opts;
   const { format } = parseInput(Format, { format: (query as { format?: unknown } | null)?.format });
   const { from, to } = parseRange(query, now);
   const day = (d: Date) => wib(d).slice(0, 10);
@@ -58,13 +76,14 @@ export function exportReadings(sql: Sql, deviceId: string, query: unknown, now =
   }
   const values = (r: Row) => {
     const cm = Number(r.level);
-    return [deviceId, wib(r.ts), r.ts.toISOString(), cm, +(cm / 100).toFixed(4), r.status] as const;
+    const level = waterLevelCm(sensorHeightCm, cm);
+    return [deviceId, wib(r.ts), r.ts.toISOString(), cm, +(cm / 100).toFixed(4), level, r.status] as const;
   };
 
   if (format === 'csv') {
     async function* csv() {
       yield '﻿' + EXPORT_COLUMNS.join(',') + '\r\n'; // BOM: Excel opens UTF-8 correctly
-      for await (const batch of rows()) yield batch.map((r) => values(r).join(',')).join('\r\n') + '\r\n';
+      for await (const batch of rows()) yield batch.map((r) => values(r).map((v) => v ?? '').join(',')).join('\r\n') + '\r\n';
     }
     return { filename, contentType: 'text/csv; charset=utf-8', body: Readable.from(csv()) };
   }
@@ -79,6 +98,7 @@ export function exportReadings(sql: Sql, deviceId: string, query: unknown, now =
       { header: 'timestamp_utc', key: 'timestamp_utc', width: 26 },
       { header: 'distance_cm', key: 'distance_cm', width: 13, style: { numFmt: '0.00' } },
       { header: 'distance_m', key: 'distance_m', width: 12, style: { numFmt: '0.0000' } },
+      { header: 'water_level_cm', key: 'water_level_cm', width: 15, style: { numFmt: '0.0' } },
       { header: 'status', key: 'status', width: 10 },
     ];
     for await (const batch of rows()) for (const r of batch) ws.addRow([...values(r)]).commit();
@@ -90,6 +110,12 @@ export function exportReadings(sql: Sql, deviceId: string, query: unknown, now =
     info.addRow(['Diekspor (WIB)', wib(now)]).commit();
     info.addRow(['Catatan', 'Berisi titik yang tersimpan saja. Nilai yang tidak berubah disimpan ulang tiap 15 menit, jadi jeda antar baris bukan berarti data hilang.']).commit();
     info.addRow(['Jarak', 'distance = jarak sensor ke permukaan air; makin kecil = air makin tinggi.']).commit();
+    info.addRow([
+      'Water level',
+      sensorHeightCm == null
+        ? 'water_level_cm kosong: tinggi sensor dari substrat belum diisi (Edit Device).'
+        : `water_level_cm = tinggi sensor dari substrat (${sensorHeightCm} cm) − distance_cm.`,
+    ]).commit();
     info.commit();
     await wb.commit();
   })().catch((err: unknown) => out.destroy(err as Error));

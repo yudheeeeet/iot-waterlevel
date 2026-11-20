@@ -40,7 +40,7 @@ function Dashboard({ auth }) {
           </div>
         )}
 
-        <SummaryCards summary={m.summary} selectedDevice={m.selectedDevice} weather={w.weather} loading={m.loading} />
+        <SummaryCards summary={m.summary} weather={w.weather} loading={m.loading} />
 
         <div className="row row--monitoring">
           <DeviceMap

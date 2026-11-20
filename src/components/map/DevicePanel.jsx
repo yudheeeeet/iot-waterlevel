@@ -76,8 +76,8 @@ export default function DevicePanel({ mode, draft, onChange, onCancel, onSubmit,
           {!heightValid
             ? `Must be more than 0 and at most ${SENSOR_HEIGHT_MAX_CM} cm.`
             : heightSet
-              ? `= ${(height / 100).toFixed(2)} m · used to show water depth`
-              : 'Optional · used to show water depth'}
+              ? `= ${(height / 100).toFixed(2)} m · used to show water level`
+              : 'Optional · used to show water level'}
         </small>
       </label>
       {error && <p className="form-error">{error}</p>}

@@ -5,6 +5,7 @@ import { Layers, Plus, Minus, Navigation, X } from 'lucide-react';
 import { config } from '../../config';
 import { formatDayMonth, formatTime } from '../../utils/format';
 import { displayStatus, statusMeta, LEVEL_STATUS } from '../../utils/status';
+import { deviceWaterLevel, formatLevelCm, MISSING_HEIGHT_HINT } from '../../utils/waterLevel';
 import { Button, StatusBadge, Modal } from '../ui';
 import DevicePanel from './DevicePanel';
 import DeviceCredentials from './DeviceCredentials';
@@ -308,22 +309,10 @@ const BROKER_NOTE = {
   error: 'Broker: sync failed — rotate the token to retry',
 };
 
-/**
- * Water depth = sensor height from substrate − sensor-to-water distance (cm), from the latest reading.
- * null when the height is not set or there is no reading. A negative result (distance > height:
- * dry bed or a wrong height) is shown as 0 with a warning.
- */
-function waterDepth(device) {
-  const h = device.sensorHeightCm;
-  const d = device.lastReading?.distanceCm;
-  if (h == null || d == null) return null;
-  const cm = h - d;
-  return { cm: Math.max(0, cm), invalid: cm < 0 };
-}
-
 function DevicePopup({ device, status, onClose, showBroker }) {
   const r = device.lastReading;
-  const depth = waterDepth(device);
+  // Only the water level is shown to users (sensor height − distance); the raw distance stays internal.
+  const level = deviceWaterLevel(device);
   return (
     <div className="dm-popup__body">
       <div className="dm-popup__head">
@@ -336,16 +325,14 @@ function DevicePopup({ device, status, onClose, showBroker }) {
       <p className="dm-popup__coords">Lat {device.lat.toFixed(4)}° · Long {device.lon.toFixed(4)}°</p>
       <div className="dm-popup__reading">
         <div>
-          <span className="muted">Sensor-to-water distance</span>
-          <strong>{r ? `${(r.distanceCm / 100).toFixed(2)} m` : '—'}</strong>
-          {depth && (
-            <span
-              className={`dm-popup__depth${depth.invalid ? ' dm-popup__depth--warn' : ''}`}
-              title={depth.invalid ? 'Distance is greater than the sensor height. Check the sensor height in Edit Device.' : undefined}
-            >
-              Water depth {(depth.cm / 100).toFixed(2)} m{depth.invalid && ' ⚠'}
-            </span>
-          )}
+          <span className="muted">Water level</span>
+          <strong
+            className={level?.invalid ? 'dm-popup__level--warn' : undefined}
+            title={level?.invalid ? 'Distance is greater than the sensor height. Check the sensor height in Edit Device.' : undefined}
+          >
+            {level ? `${formatLevelCm(level.cm)} cm` : '—'}{level?.invalid && ' ⚠'}
+          </strong>
+          {r && device.sensorHeightCm == null && <span className="dm-popup__hint">{MISSING_HEIGHT_HINT}</span>}
         </div>
         <StatusBadge status={device.online ? 'normal' : 'offline'} label={device.online ? 'Online' : 'Offline'} />
       </div>

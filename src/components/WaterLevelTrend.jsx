@@ -2,13 +2,14 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   ResponsiveContainer, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ReferenceDot,
 } from 'recharts';
-import { ChevronDown, CalendarDays, ArrowRight, Info } from 'lucide-react';
+import { ChevronDown, CalendarDays, ArrowRight } from 'lucide-react';
 import { monitoringService } from '../services/monitoringService';
 import { saveBlob } from '../services/apiClient';
 import {
   formatDate, formatDateTime, formatTime, formatDayMonth, toLocalInputValue, fromLocalInputValue, jakartaDateKey,
 } from '../utils/format';
 import { levelStatusFromDistance, statusMeta } from '../utils/status';
+import { waterLevel, formatLevelCm, MISSING_HEIGHT_HINT } from '../utils/waterLevel';
 import { Button } from './ui';
 
 const HOUR = 3600 * 1000;
@@ -73,18 +74,15 @@ export default function WaterLevelTrend({ devices, selectedId, onSelectDevice, l
     );
   }, [lastReading, selectedId, range, custom, rangeDef]);
 
-  const yDomain = useMemo(() => {
-    const vals = data.map((d) => d.m).filter((v) => v != null); // null = device offline (gap)
-    if (!vals.length) return [0, 5];
-    const lo = Math.max(0, Math.floor((Math.min(...vals) - 0.1) * 2) / 2);
-    const hi = Math.ceil((Math.max(...vals) + 0.1) * 2) / 2;
-    return [lo, Math.max(hi, lo + 1)];
-  }, [data]);
-  const yTicks = useMemo(() => {
-    const t = [];
-    for (let v = yDomain[0]; v <= yDomain[1] + 1e-9; v += 0.5) t.push(+v.toFixed(1));
-    return t;
-  }, [yDomain]);
+  // Plotted value = water level (cm) = the device's sensor height − distance; the sensor height in use
+  // now applies to the whole history. level is null for offline gaps or when no height is set.
+  const sensorHeightCm = device?.sensorHeightCm ?? null;
+  const chartData = useMemo(
+    () => data.map((p) => ({ ...p, level: waterLevel(sensorHeightCm, p.cm)?.cm ?? null })),
+    [data, sensorHeightCm],
+  );
+
+  const { yDomain, yTicks } = useMemo(() => levelAxis(chartData.map((d) => d.level).filter((v) => v != null)), [chartData]);
 
   const multiDay = win.to - win.from > 24 * HOUR;
   const xTicks = useMemo(() => {
@@ -93,8 +91,11 @@ export default function WaterLevelTrend({ devices, selectedId, onSelectDevice, l
   }, [win]);
 
   // Latest point with a value (offline buckets are null and drawn as gaps).
-  const latest = [...data].reverse().find((p) => p.m != null);
+  const latest = [...chartData].reverse().find((p) => p.level != null);
   const hasValues = !!latest;
+  // Export works on the stored distances, so it only needs readings (not a sensor height).
+  const hasReadings = data.some((p) => p.cm != null);
+  const missingHeight = hasReadings && sensorHeightCm == null;
 
   const doExport = useCallback(async (format) => {
     if (!selectedId) return;
@@ -123,8 +124,7 @@ export default function WaterLevelTrend({ devices, selectedId, onSelectDevice, l
     <div className="card trend">
       <div className="trend__head">
         <div>
-          <h2 className="section-title">Water Level Trend</h2>
-          <p className="section-sub section-sub--lg">Historical sensor readings and water surface distance.</p>
+          <h2 className="section-title">Water Level Chart</h2>
         </div>
         <div className="trend__actions">
           <label className="select">
@@ -137,8 +137,8 @@ export default function WaterLevelTrend({ devices, selectedId, onSelectDevice, l
           </label>
           <span className="vr" />
           <span className="muted">Export Data</span>
-          <Button onClick={() => doExport('csv')} disabled={!!exporting || !hasValues}>{exporting === 'csv' ? 'Exporting…' : 'Export CSV'}</Button>
-          <Button onClick={() => doExport('xlsx')} disabled={!!exporting || !hasValues}>{exporting === 'xlsx' ? 'Exporting…' : 'Export XLSX'}</Button>
+          <Button onClick={() => doExport('csv')} disabled={!!exporting || !hasReadings}>{exporting === 'csv' ? 'Exporting…' : 'Export CSV'}</Button>
+          <Button onClick={() => doExport('xlsx')} disabled={!!exporting || !hasReadings}>{exporting === 'xlsx' ? 'Exporting…' : 'Export XLSX'}</Button>
         </div>
       </div>
 
@@ -162,7 +162,7 @@ export default function WaterLevelTrend({ devices, selectedId, onSelectDevice, l
         </div>
         <div className="series-key">
           <span className="series-key__line" />
-          Sensor-to-water distance
+          Water level
         </div>
       </div>
 
@@ -185,12 +185,13 @@ export default function WaterLevelTrend({ devices, selectedId, onSelectDevice, l
       </div>
 
       <div className="trend__chart">
-        <span className="trend__ytitle">Distance (m)</span>
+        <span className="trend__ytitle">Water level (cm)</span>
         {error && <div className="chart-overlay chart-overlay--error">{error}</div>}
-        {!error && !loading && !hasValues && <div className="chart-overlay">No readings in this period.</div>}
+        {!error && !loading && missingHeight && <div className="chart-overlay">{MISSING_HEIGHT_HINT} to show the water level.</div>}
+        {!error && !loading && !hasReadings && <div className="chart-overlay">No readings in this period.</div>}
         {loading && !data.length && <div className="chart-overlay">Loading readings…</div>}
         <ResponsiveContainer width="100%" height={250}>
-          <AreaChart data={data} margin={{ top: 12, right: 32, bottom: 0, left: 0 }}>
+          <AreaChart data={chartData} margin={{ top: 12, right: 32, bottom: 0, left: 0 }}>
             <defs>
               <linearGradient id="trendFill" x1="0" y1="0" x2="0" y2="1">
                 <stop offset="0%" stopColor="#0889a8" stopOpacity={0.18} />
@@ -204,8 +205,8 @@ export default function WaterLevelTrend({ devices, selectedId, onSelectDevice, l
               tick={{ fill: '#64748b', fontSize: 12 }} axisLine={false} tickLine={false} tickMargin={10}
             />
             <YAxis
-              domain={yDomain} ticks={yTicks} tickFormatter={(v) => v.toFixed(1)}
-              tick={{ fill: '#64748b', fontSize: 12 }} axisLine={false} tickLine={false} width={44}
+              domain={yDomain} ticks={yTicks} tickFormatter={(v) => String(v)}
+              tick={{ fill: '#64748b', fontSize: 12 }} axisLine={false} tickLine={false} width={52}
             />
             <Tooltip
               content={<TrendTooltip />}
@@ -214,12 +215,12 @@ export default function WaterLevelTrend({ devices, selectedId, onSelectDevice, l
               isAnimationActive={false}
             />
             <Area
-              type="monotone" dataKey="m" stroke="#0889a8" strokeWidth={2.5} fill="url(#trendFill)"
+              type="monotone" dataKey="level" stroke="#0889a8" strokeWidth={2.5} fill="url(#trendFill)"
               dot={false} activeDot={{ r: 5, fill: '#0889a8', stroke: '#fff', strokeWidth: 2 }}
               isAnimationActive={false}
             />
             {latest && (
-              <ReferenceDot x={latest.t} y={latest.m} r={5} fill="#0889a8" stroke="rgba(8,137,168,0.25)" strokeWidth={8} />
+              <ReferenceDot x={latest.t} y={latest.level} r={5} fill="#0889a8" stroke="rgba(8,137,168,0.25)" strokeWidth={8} />
             )}
           </AreaChart>
         </ResponsiveContainer>
@@ -227,13 +228,9 @@ export default function WaterLevelTrend({ devices, selectedId, onSelectDevice, l
       </div>
 
       <div className="trend__foot">
-        <span className="note">
-          <Info size={13} strokeWidth={1.75} />
-          Lower distance = higher water surface · Not water depth
-        </span>
         {latest && device && (
           <strong className="trend__latest">
-            Latest measurement: {latest.m.toFixed(2)} m · {statusMeta(device.online ? levelStatusFromDistance(latest.cm) : 'offline').label}
+            Latest measurement: {formatLevelCm(latest.level)} cm · {statusMeta(device.online ? levelStatusFromDistance(latest.cm) : 'offline').label}
           </strong>
         )}
       </div>
@@ -247,15 +244,28 @@ function TrendTooltip({ active, payload }) {
   return (
     <div className="trend-tooltip">
       <span>{formatDate(p.t)} · {formatTime(p.t)} WIB</span>
-      <strong>{p.m == null ? 'Offline · no data' : `${p.cm} cm / ${p.m.toFixed(2)} m`}</strong>
+      <strong>{p.cm == null ? 'Offline · no data' : p.level == null ? '—' : `${formatLevelCm(p.level)} cm`}</strong>
     </div>
   );
 }
 
-const toPoint = (r) => {
-  const t = new Date(r.timestamp).getTime();
-  return { t, cm: r.distanceCm, m: r.distanceCm == null ? null : r.distanceCm / 100 };
-};
+// cm = stored sensor-to-water distance (null = offline gap); the water level is derived per render.
+const toPoint = (r) => ({ t: new Date(r.timestamp).getTime(), cm: r.distanceCm ?? null });
+
+/** Y axis for water level in cm: rounded bounds and ~5 ticks on a 1/2/5 × 10ⁿ step. */
+function levelAxis(vals) {
+  if (!vals.length) return { yDomain: [0, 100], yTicks: [0, 20, 40, 60, 80, 100] };
+  const min = Math.min(...vals);
+  const max = Math.max(...vals);
+  const raw = Math.max(max - min, 10) / 5;
+  const pow = 10 ** Math.floor(Math.log10(raw));
+  const step = [1, 2, 5, 10].map((k) => k * pow).find((s) => s >= raw);
+  const lo = Math.max(0, Math.floor((min - step / 2) / step) * step);
+  const hi = Math.ceil((max + step / 2) / step) * step;
+  const yTicks = [];
+  for (let v = lo; v <= hi + 1e-9; v += step) yTicks.push(+v.toFixed(6));
+  return { yDomain: [lo, hi], yTicks };
+}
 
 function describeWindow(from, to) {
   if (jakartaDateKey(from) === jakartaDateKey(to)) return `${formatDate(from)} · ${formatTime(from)}–${formatTime(to)} WIB`;

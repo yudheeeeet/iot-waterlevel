@@ -1,6 +1,7 @@
-import { Droplet, Radio, Ruler, CloudRain, Info } from 'lucide-react';
+import { Droplet, Radio, CloudRain } from 'lucide-react';
 import { config } from '../config';
-import { formatNumber, formatTime } from '../utils/format';
+import { formatNumber } from '../utils/format';
+import { formatLevelCm } from '../utils/waterLevel';
 
 function MetricCard({ title, icon: Icon, value, unit, context, contextRight, loading }) {
   return (
@@ -21,16 +22,11 @@ function MetricCard({ title, icon: Icon, value, unit, context, contextRight, loa
   );
 }
 
-export default function SummaryCards({ summary, selectedDevice, weather, loading }) {
+export default function SummaryCards({ summary, weather, loading }) {
   const total = summary?.devices?.total ?? 0;
   const online = summary?.devices?.online ?? 0;
   const offline = summary?.devices?.offline ?? 0;
   const pct = total ? Math.round((online / total) * 100) : 0;
-
-  // "Current water level" follows the device selected on the map / gauge.
-  const current = selectedDevice?.lastReading
-    ? { deviceId: selectedDevice.id, ...selectedDevice.lastReading }
-    : summary?.latestReading;
 
   // Rain gauge value from the backend wins; otherwise the weather-forecast estimate.
   const measuredRain = summary?.rainfallTodayMm;
@@ -44,7 +40,7 @@ export default function SummaryCards({ summary, selectedDevice, weather, loading
       <div className="overview__grid">
         <MetricCard
           title="Average Water Level" icon={Droplet} loading={loading}
-          value={formatNumber(summary?.averageDistanceM)} unit="m"
+          value={formatLevelCm(summary?.averageWaterLevelCm)} unit="cm"
           context="Average across monitored devices"
         />
         <MetricCard
@@ -53,21 +49,16 @@ export default function SummaryCards({ summary, selectedDevice, weather, loading
           context={`${pct}% online`} contextRight={`${offline} offline`}
         />
         <MetricCard
-          title="Current Water Level" icon={Ruler} loading={loading}
-          value={current ? formatNumber(current.distanceCm / 100) : '—'} unit="m"
-          context={current ? `Latest reading · ${current.deviceId}, ${formatTime(current.timestamp)} WIB` : 'No reading yet'}
-        />
-        <MetricCard
           title="Today's Rainfall" icon={CloudRain}
           value={rain == null ? '—' : formatNumber(rain, 1)} unit="mm"
           context={rainContext}
         />
       </div>
-      <div className="overview__note">
-        <Info size={14} strokeWidth={1.75} />
-        <span>Water level readings show sensor-to-water distance, not water depth. A smaller distance indicates a higher water surface.</span>
-        {config.useMock && <strong className="overview__demo">DEMO DATA</strong>}
-      </div>
+      {config.useMock && (
+        <div className="overview__note">
+          <strong className="overview__demo">DEMO DATA</strong>
+        </div>
+      )}
     </div>
   );
 }

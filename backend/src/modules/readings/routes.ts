@@ -14,7 +14,8 @@ export const readingsRoutes =
     // CSV / XLSX download of stored readings (streamed).
     app.get<{ Params: { id: string } }>('/devices/:id/readings/export', async (request, reply) => {
       const device = await service.mustFind(request.params.id);
-      const file = exportReadings(sql, device.id, request.query);
+      const sensorHeightCm = device.sensorHeightCm === null ? null : Number(device.sensorHeightCm);
+      const file = exportReadings(sql, device.id, request.query, { sensorHeightCm });
       return reply
         .header('content-type', file.contentType)
         .header('content-disposition', `attachment; filename="${file.filename}"`)

@@ -54,7 +54,7 @@ Penonton (browser laptop / HP di hotspot yang sama) ◄── Dashboard :5173 �
    tombol Add/Edit/Rotate/Remove.
 2. **Data langsung dari sensor** — dekatkan tangan / papan ke sensor; dalam ≤ 30 detik (interval polling demo)
    *Last reading* dan status (Normal → Warning → Critical) berubah. Jarak = sensor ke permukaan air.
-3. **Grafik & export** — *Water Level Trend* 6 jam, lalu **Export XLSX** dan buka di Excel (sheet *Info*
+3. **Grafik & export** — *Water Level Chart* 6 jam, lalu **Export XLSX** dan buka di Excel (sheet *Info*
    menjelaskan isinya).
 4. **Cuaca Bogor** — kartu cuaca dari BMKG (hari 1–3) dan Open-Meteo (hari 4–7).
 5. **Online / offline** — cabut daya ESP32: setelah 5 menit status **Offline** dan grafik menampilkan celah;

@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { monitoringService } from '../services/monitoringService';
 import { subscribeRealtime } from '../services/realtimeService';
 import { config } from '../config';
+import { deviceWaterLevel } from '../utils/waterLevel';
 
 /**
  * Devices, summary and realtime state for the dashboard.
@@ -86,9 +87,13 @@ export function useMonitoring() {
   const liveSummary = useMemo(() => {
     const online = devices.filter((d) => d.online && d.lastReading);
     const avgCm = online.length ? online.reduce((s, d) => s + d.lastReading.distanceCm, 0) / online.length : null;
+    // Average water level (cm): online devices whose sensor height is set; null when there is none.
+    const levels = online.map(deviceWaterLevel).filter(Boolean);
+    const avgLevelCm = levels.length ? levels.reduce((s, l) => s + l.cm, 0) / levels.length : null;
     return {
       ...summary,
       averageDistanceM: avgCm != null ? +(avgCm / 100).toFixed(2) : summary?.averageDistanceM ?? null,
+      averageWaterLevelCm: avgLevelCm != null ? +avgLevelCm.toFixed(1) : null,
       devices: devices.length
         ? { total: devices.length, online: devices.filter((d) => d.online).length, offline: devices.filter((d) => !d.online).length }
         : summary?.devices,

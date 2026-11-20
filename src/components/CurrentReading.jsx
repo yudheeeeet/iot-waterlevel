@@ -48,13 +48,11 @@ export default function CurrentReading({ device }) {
         )}
       </div>
 
-      <div className="gauge-card__device">
-        <div>
-          <strong>{device ? `${device.id} · ${device.name}` : 'No device selected'}</strong>
-          <span>Sensor-to-Water Distance</span>
+      {device && (
+        <div className="gauge-card__device">
+          <StatusBadge status={status} />
         </div>
-        {device && <StatusBadge status={status} />}
-      </div>
+      )}
 
       <div className="gauge">
         <svg viewBox={`0 0 ${W} ${H}`} role="img" aria-label={cm != null ? `Distance ${cm} centimeters` : 'No reading'}>

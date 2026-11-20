@@ -123,7 +123,7 @@ mosquitto_pub -h <host> -p 8883 --cafile isrgrootx1.pem -q 1 -i BWN-021 -u BWN-0
 - [ ] Device tersambung ke broker (tidak ada error "not authorised")
 - [ ] Dalam ≤ 1 menit, dashboard menampilkan device **online** dengan *Last reading* yang sesuai
 - [ ] Nilai cocok dengan pengukuran manual (penggaris / meteran) ke permukaan air
-- [ ] Grafik *Water Level Trend* menampilkan titik baru
+- [ ] Grafik *Water Level Chart* menampilkan titik baru
 - [ ] Cabut daya / putus jaringan > 5 menit → device **offline**; nyalakan lagi → online tanpa reset manual
 - [ ] Rotasi token di dashboard → device ditolak sampai firmware diisi token baru
 

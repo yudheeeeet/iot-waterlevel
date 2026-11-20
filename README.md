@@ -69,8 +69,9 @@ All timestamps ISO-8601 (UTC or with offset). Distances in **cm**, sensor-to-wat
 ```
 `status`: `normal` (≥ 200 cm) · `warning` (100–199) · `critical` (< 100) — computed by the backend.
 `online`: decided by the backend (e.g. no message for N × 60 s, or MQTT Last Will).
-`sensorHeightCm`: sensor height above the substrate (cm, optional, `null` when not set). The map popup shows
-water depth = `sensorHeightCm − lastReading.distanceCm` (shown as 0 with a warning when negative); it does not affect `status`.
+`sensorHeightCm`: sensor height above the substrate (cm, optional, `null` when not set). The dashboard shows
+water level = `sensorHeightCm − distanceCm` in cm (map popup, Average Water Level card, Water Level Chart; 0 with a
+warning when negative); it does not affect `status`. Exports add the same value as `water_level_cm`.
 
 | Method | Path | Response / body |
 |---|---|---|

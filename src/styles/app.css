@@ -135,7 +135,7 @@ button { font: inherit; color: inherit; }
 
 /* ── Summary cards ────────────────────────────────────────────── */
 .overview { display: flex; flex-direction: column; gap: var(--gap-xs); }
-.overview__grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--gap-lg); }
+.overview__grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--gap-lg); }
 .metric { display: flex; flex-direction: column; gap: 12px; padding: 20px; }
 .metric__head { display: flex; align-items: center; justify-content: space-between; }
 .metric__title { font-family: var(--font-figma-text); font-weight: 500; font-size: var(--fs-body2); line-height: 20px; color: var(--color-text-muted); }
@@ -206,8 +206,8 @@ button { font: inherit; color: inherit; }
 .dm-popup__reading { display: flex; align-items: center; justify-content: space-between; }
 .dm-popup__reading > div { display: flex; flex-direction: column; gap: 3px; font-size: var(--fs-caption); }
 .dm-popup__reading strong { font-family: var(--font-display); font-size: 20px; color: var(--color-navy-900); }
-.dm-popup__depth { font-size: var(--fs-caption); color: var(--color-text-strong); }
-.dm-popup__depth--warn { color: var(--warning-600); }
+.dm-popup__reading strong.dm-popup__level--warn { color: var(--warning-600); }
+.dm-popup__hint { font-size: var(--fs-caption); color: var(--warning-600); }
 
 /* add / edit panel */
 .device-panel {
@@ -357,7 +357,6 @@ button { font: inherit; color: inherit; }
 .trend-tooltip span { font-size: var(--fs-caption); color: var(--color-text-on-dark-subtle); }
 .trend-tooltip strong { font-size: var(--fs-body2); font-weight: 600; }
 .trend__foot { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
-.trend__foot .note { align-items: center; }
 .trend__latest { font-size: var(--fs-caption); font-weight: 600; color: var(--color-teal-600); }
 
 /* ── Footer ───────────────────────────────────────────────────── */
@@ -366,7 +365,6 @@ button { font: inherit; color: inherit; }
 /* ── Responsive ───────────────────────────────────────────────── */
 @media (max-width: 1200px) {
   .row--monitoring, .row--weather { grid-template-columns: 1fr; }
-  .overview__grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 @media (max-width: 760px) {
   :root { --page-gutter: 16px; }

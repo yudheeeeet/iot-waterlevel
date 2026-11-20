@@ -150,8 +150,10 @@ export const mockApi = {
 
   async exportReadings(id, { from, to, format }) {
     const { points } = await this.getReadings(id, { from, to });
-    const rows = points.map((p) => [id, p.timestamp, p.distanceCm, (p.distanceCm / 100).toFixed(2), levelStatusFromDistance(p.distanceCm)]);
-    const header = ['device_id', 'timestamp', 'distance_cm', 'distance_m', 'status'];
+    const h = find(id).sensorHeightCm;
+    const level = (cm) => (h == null ? '' : Math.max(0, h - cm).toFixed(1)); // same rule as the backend
+    const rows = points.map((p) => [id, p.timestamp, p.distanceCm, (p.distanceCm / 100).toFixed(2), level(p.distanceCm), levelStatusFromDistance(p.distanceCm)]);
+    const header = ['device_id', 'timestamp', 'distance_cm', 'distance_m', 'water_level_cm', 'status'];
     const stamp = new Date().toISOString().slice(0, 10);
     if (format === 'xlsx') {
       return { blob: toSpreadsheetXml(header, rows), filename: `${id}_readings_${stamp}.xls` };
