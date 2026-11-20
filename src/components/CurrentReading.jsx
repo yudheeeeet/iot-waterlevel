@@ -67,7 +67,7 @@ export default function CurrentReading({ device }) {
         </svg>
         <div className="gauge__value">
           <div>
-            <strong>{cm != null ? Number(cm).toFixed(1) : '—'}</strong>
+            <strong>{cm != null ? Number(cm).toFixed(2) : '—'}</strong>
             <span>cm</span>
           </div>
           <em>{cm != null ? `${(cm / 100).toFixed(2)} m` : '—'}</em>

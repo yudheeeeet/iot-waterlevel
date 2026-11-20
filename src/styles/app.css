@@ -264,7 +264,7 @@ button { font: inherit; color: inherit; }
 .gauge__tick { font: 400 12px var(--font-text); fill: var(--color-text-muted); }
 .gauge__value { position: absolute; left: 50%; top: 40%; transform: translateX(-50%); display: flex; flex-direction: column; align-items: center; gap: 4px; }
 .gauge__value > div { display: flex; align-items: baseline; gap: 7px; white-space: nowrap; }
-.gauge__value strong { font-family: var(--font-display); font-weight: 600; font-size: min(var(--fs-gauge), 9.5cqi); line-height: 1.1; color: var(--color-navy-900); }
+.gauge__value strong { font-family: var(--font-display); font-weight: 600; font-size: min(40px, 8.5cqi); line-height: 1.1; color: var(--color-navy-900); }
 .gauge__value span { font-size: min(var(--fs-unit), 3.8cqi); color: var(--color-text-muted); }
 .gauge__value em { font-style: normal; font-family: var(--font-display); font-weight: 600; font-size: min(18px, 3.8cqi); color: var(--color-teal-600); }
 .gauge__value svg { color: var(--color-teal-600); }
